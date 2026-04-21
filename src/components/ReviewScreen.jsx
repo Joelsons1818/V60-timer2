@@ -19,10 +19,12 @@ export function ReviewScreen({
 }) {
   const canSave = isLocalMode || Boolean(user);
   const [coffeeName, setCoffeeName] = useState('');
+  const [notes, setNotes] = useState('');
 
   const handleSave = () => {
     onSave({
       coffeeName,
+      notes,
     });
   };
 
@@ -79,6 +81,16 @@ export function ReviewScreen({
             onChange={(event) => setCoffeeName(event.target.value)}
           />
         </div>
+      </div>
+
+      <div className="control-group">
+        <label>Observation</label>
+        <textarea
+          className="text-area-field discreet-note-field"
+          placeholder="ex: moagem mais fina, florou bem, ficou mais doce..."
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+        />
       </div>
 
       {!canSave && (

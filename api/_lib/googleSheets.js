@@ -25,6 +25,22 @@ let accessTokenCache = {
   token: '',
 };
 
+const normalizeServiceAccountPrivateKey = (value) => {
+  let normalized = String(value).trim();
+
+  if (
+    (normalized.startsWith('"') && normalized.endsWith('"')) ||
+    (normalized.startsWith("'") && normalized.endsWith("'"))
+  ) {
+    normalized = normalized.slice(1, -1);
+  }
+
+  return normalized
+    .replace(/\r\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .trim();
+};
+
 const encodeBase64Url = (value) => {
   return Buffer.from(value, 'utf8').toString('base64url');
 };
@@ -43,7 +59,7 @@ const getSheetsConfig = () => {
 
   return {
     serviceAccountEmail,
-    serviceAccountPrivateKey: serviceAccountPrivateKey.replace(/\\n/g, '\n'),
+    serviceAccountPrivateKey: normalizeServiceAccountPrivateKey(serviceAccountPrivateKey),
     spreadsheetId,
     sheetName,
   };
@@ -83,10 +99,20 @@ const createServiceAccountJwt = () => {
     exp: now + 3600,
     iat: now,
   }));
+  let privateKey;
+
+  try {
+    privateKey = createPrivateKey(config.serviceAccountPrivateKey);
+  } catch {
+    throw new Error(
+      'GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY is invalid. In Vercel, paste only the private_key value from the JSON key, keep BEGIN/END PRIVATE KEY, and do not wrap it in extra quotes.',
+    );
+  }
+
   const signature = sign(
     'RSA-SHA256',
     Buffer.from(`${header}.${claims}`),
-    createPrivateKey(config.serviceAccountPrivateKey),
+    privateKey,
   ).toString('base64url');
 
   return `${header}.${claims}.${signature}`;

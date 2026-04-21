@@ -45,6 +45,7 @@ const buildLogFromFields = (fields) => {
     id: fields.id || createDraftId(),
     date: fields.date || new Date().toISOString(),
     coffeeName: fields.coffeeName?.trim() || '',
+    notes: fields.notes?.trim() || '',
     coffeeGrams: recipe.coffeeGrams,
     totalWater: recipe.totalWater,
     temperature: normalizedTemperature,
@@ -179,6 +180,16 @@ export function HistoryScreen({ onBack }) {
             </div>
           </div>
 
+          <div className="control-group">
+            <label>Observation</label>
+            <textarea
+              className="text-area-field discreet-note-field"
+              placeholder="Write a short note about the brew..."
+              value={draft.notes || ''}
+              onChange={(event) => handleFieldChange('notes', event.target.value)}
+            />
+          </div>
+
           <div className="primary-input-grid history-edit-grid">
             <div className="control-group compact-group">
               <label>Coffee</label>
@@ -310,6 +321,13 @@ export function HistoryScreen({ onBack }) {
                   <strong>{log.strengthPoursCount} pours</strong>
                 </div>
               </div>
+
+              {log.notes && (
+                <div className="history-note-card">
+                  <span className="detail-label">Observation</span>
+                  <p className="history-note-copy">{log.notes}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>

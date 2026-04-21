@@ -1,0 +1,400 @@
+RESUMO DO PROJETO V60-TIMER2
+
+1. OBJETIVO GERAL
+
+O V60-timer2 e um app para preparar cafe no metodo 4:6 do Tetsu Kasuya.
+Ele permite:
+- configurar a receita na tela inicial
+- acompanhar o preparo com timer guiado
+- salvar a receita usada no final
+- abrir um historico privado
+- editar receitas salvas
+- criar receitas manualmente dentro do historico
+
+O app foi preparado para rodar no navegador e para ser publicado na Vercel com deploy automatico via GitHub.
+
+
+2. COMO O APP FUNCIONA POR FLUXO
+
+Fluxo principal:
+- Home / Config
+- Timer
+- Review / Save
+- History
+
+2.1. TELA INICIAL (HOME / CONFIG)
+
+Na tela inicial o usuario escolhe:
+- Coffee (g)
+- Water (ml)
+- Temp (graus C)
+- Balance: Acidity, Balanced ou Sweet
+- Strength / Number of Pours da fase 2
+
+Regras importantes:
+- o ratio usado e 1:15
+- se o cafe muda, a agua acompanha
+- se a agua muda, o cafe acompanha
+- a temperatura fica independente
+- o balance altera a divisao da fase 1
+- o numero de pours altera a fase 2
+
+Tambem existem botoes para:
+- History
+- Google Login
+- Logout
+
+2.2. CALCULO DA RECEITA
+
+O motor da receita usa a logica do metodo 4:6.
+
+Fase 1:
+- representa 40 por cento da agua total
+- sempre em 2 pours
+- dura 90 segundos no total
+- a distribuicao entre os 2 pours muda conforme o balance
+
+Fase 2:
+- representa 60 por cento da agua total
+- pode ter 2, 3, 4 ou 5 pours
+- dura 120 segundos no total
+- o numero de pours muda a extracao e a intensidade
+
+O calculo gera:
+- totalWater
+- coffeeGrams
+- balance
+- strengthPoursCount
+- totalTime
+- ratio
+- steps
+
+Cada step gerado possui:
+- instruction
+- amount
+- totalAccumulated
+- duration
+- phase
+
+
+3. TIMER
+
+Ao clicar em Start Brewing:
+- o app cria uma copia da receita ativa
+- abre a tela do timer
+- inicia uma contagem preparatoria de 3 segundos
+
+Durante o timer:
+- a tela mostra o tempo da etapa atual
+- mostra o tempo total acumulado no canto direito
+- mostra a instrucao atual
+- mostra Step Pour e Target da balanca
+- nos 5 segundos finais aparece a proxima etapa com:
+  Pour: x ml | Target: y ml
+- existe barra de progresso por etapas
+- existe Pause / Start
+- existe Stop
+
+Melhorias aplicadas:
+- correcoes para evitar travamentos na contagem regressiva
+- wake lock para tentar manter a tela do celular acordada durante o preparo
+- reacquire de wake lock quando o navegador libera o lock
+- audio liberado a partir da interacao do usuario
+- mensagens do final de etapa ajustadas para um visual mais delicado
+
+Quando o timer termina:
+- o app toca som final
+- vai para a tela de review / save
+
+
+4. REVIEW / SAVE
+
+Ao final do preparo o app abre uma tela de revisao.
+Essa tela mostra a receita exata usada naquele brew:
+- Coffee
+- Water
+- Temp
+- Balance
+- Stage 2 pours
+
+Nessa tela foi adicionado:
+- campo Coffee Name
+- botao Save To History
+- botao Back Home
+
+Se o usuario nao estiver autenticado:
+- a tela mostra o login Google
+- o botao de salvar fica bloqueado
+
+Se estiver autenticado:
+- o app gera um objeto de log e salva no historico
+
+
+5. HISTORY - VISAO GERAL
+
+O History foi a parte mais importante da implementacao.
+Ele foi desenhado para ser simples na interface, privado no acesso e persistente no deploy.
+
+Objetivos do History:
+- salvar receitas de forma permanente
+- abrir receitas antigas
+- editar receitas salvas
+- criar receita nova manualmente
+- manter foco apenas nos dados relevantes da home
+
+5.1. O QUE O HISTORY SALVA
+
+A interface do historico foi simplificada para salvar e editar principalmente o que importa na home:
+- coffeeName
+- coffeeGrams
+- totalWater
+- temperature
+- balance
+- strengthPoursCount
+
+Internamente o log salvo tambem carrega:
+- id
+- date
+- totalTime
+- ratio
+- steps
+
+No estado atual da interface:
+- o usuario NAO edita mais os detalhes de cada etapa
+- o usuario NAO edita o stepsJson
+- o foco ficou nos parametros da receita
+
+5.2. COMO A RECEITA E SALVA NO HISTORY
+
+Existem 2 caminhos:
+
+A. Salvando no final do brew
+- o usuario termina o timer
+- abre a tela Save This Brew
+- informa o nome do cafe
+- clica em Save To History
+- o app monta um brew log com os dados da receita ativa
+- o log vai para o backend
+- o backend grava na planilha privada
+
+B. Criando manualmente no proprio History
+- o usuario abre History
+- clica em New Recipe
+- preenche Coffee Name
+- escolhe Coffee, Water, Temp
+- escolhe Balance
+- escolhe Stage 2 Pours
+- clica em Save Recipe
+
+Nesse segundo caso o app recalcula a receita com base nesses campos antes de salvar.
+
+5.3. COMO O HISTORY CARREGA OS DADOS
+
+Ao entrar em History:
+- o frontend chama loadBrewLogs()
+- essa funcao faz GET em /api/recipes
+- a API valida a sessao
+- a API le a planilha no Google Sheets
+- os logs retornam para a tela
+- a lista aparece com os cards do historico
+
+Cada card mostra:
+- nome do cafe
+- data
+- coffee
+- water
+- temp
+- balance
+- stage 2 pours
+
+5.4. COMO A EDICAO FUNCIONA
+
+Cada item salvo tem botao Edit.
+
+Ao clicar:
+- o app abre um draft local
+- preenche os campos do editor
+- o usuario altera o que quiser
+- ao salvar, a receita e recalculada
+- o frontend chama PUT em /api/recipes
+- o backend localiza a linha certa pelo id
+- a planilha e atualizada
+
+5.5. COMO O HISTORY FOI DEIXADO MAIS LIMPO
+
+Mudancas visuais e de UX:
+- layout mais compacto no celular
+- g, ml e temp em linha unica
+- cards mais simples
+- remocao dos detalhes extensos de etapas
+- remocao dos textos de Local Mode da interface
+- botoes Home e New Recipe no topo
+
+Resultado:
+- historico ficou mais legivel
+- mais rapido de editar
+- mais parecido com um caderno de receitas
+
+
+6. AUTENTICACAO GOOGLE
+
+O History e protegido por login Google.
+
+Fluxo:
+- o frontend renderiza o botao do Google
+- o Google retorna um credential token
+- o frontend envia esse token para /api/auth/google
+- o backend valida a assinatura do token com as chaves publicas do Google
+- o backend confere se o client id bate com o app
+- o backend confere se o email esta na lista permitida
+- se estiver tudo certo, cria um cookie de sessao HttpOnly
+
+Depois disso:
+- /api/auth/session informa se existe sessao ativa
+- /api/auth/logout apaga a sessao
+
+O app foi preparado para aceitar mais de um email autorizado por variavel de ambiente.
+No seu caso foram considerados:
+- o seu email principal
+- bordignon.mba@gmail.com
+
+
+7. PERSISTENCIA REAL NO DEPLOY
+
+O historico NAO depende de localStorage no deploy de producao.
+Para Vercel foi implementada persistencia real com Google Sheets.
+
+Motivo:
+- Vercel nao e lugar confiavel para gravar arquivo local permanente
+- a planilha do Google resolve persistencia e facilidade de consulta
+
+Fluxo de persistencia:
+- frontend chama /api/recipes
+- API usa a service account
+- API gera um JWT assinado
+- Google devolve access token
+- API usa a Google Sheets API
+- a planilha e lida ou atualizada
+
+Comportamento da planilha:
+- usa o spreadsheet definido por env var
+- usa a aba definida por GOOGLE_SHEETS_SHEET_NAME
+- se essa aba nao existir, o app cria
+- se o cabecalho nao existir, o app cria
+
+Colunas internas da planilha:
+- id
+- date
+- coffeeName
+- notes
+- coffeeGrams
+- totalWater
+- temperature
+- balance
+- strengthPoursCount
+- totalTime
+- ratio
+- stepsJson
+- updatedAt
+
+Observacao importante:
+- apesar da planilha ter colunas para notes e stepsJson, a interface atual do app nao foca nisso
+- hoje o uso principal esta nos campos da home e no nome do cafe
+
+
+8. MODO LOCAL X PRODUCAO
+
+Em desenvolvimento:
+- se a API remota falhar, o app pode cair no modo local
+- nesse caso usa localStorage
+- isso ajuda a testar a interface sem depender de toda a infra
+
+Em producao na Vercel:
+- o caminho esperado e login Google + sessao + Google Sheets
+- o historico fica privado e persistente
+
+
+9. VARIAVEIS DE AMBIENTE IMPORTANTES
+
+Login:
+- GOOGLE_CLIENT_ID
+- VITE_GOOGLE_CLIENT_ID
+- ALLOWED_GOOGLE_EMAIL
+- SESSION_SECRET
+
+Planilha:
+- GOOGLE_SERVICE_ACCOUNT_EMAIL
+- GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+- GOOGLE_SHEETS_SPREADSHEET_ID
+- GOOGLE_SHEETS_SHEET_NAME
+
+
+10. SEGURANCA E PRIVACIDADE
+
+Foram aplicadas estas protecoes:
+- apenas emails autorizados entram no History
+- sessao em cookie HttpOnly
+- verificacao de assinatura do token Google
+- validacao de origem nas rotas da API
+- planilha privada no seu Google Drive
+- service account separada para o V60, sem mexer no outro app
+
+
+11. MELHORIAS DE UI E MOBILE FEITAS
+
+Durante o trabalho tambem foram feitas melhorias gerais:
+- home compacta no celular
+- Coffee, Water e Temp lado a lado
+- alinhamento do resumo da receita
+- tela do timer refinada
+- mensagens dos ultimos segundos melhoradas
+- target da balanca mostrado junto do proximo pour
+- barra superior de status removida
+- tempo total alinhado a direita
+- botoes de retorno para Home nas telas importantes
+
+
+12. ESTRUTURA PRINCIPAL DO CODIGO
+
+Frontend:
+- src/App.jsx
+- src/components/ConfigScreen.jsx
+- src/components/TimerScreen.jsx
+- src/components/ReviewScreen.jsx
+- src/components/HistoryScreen.jsx
+- src/components/AuthScreen.jsx
+- src/components/GoogleSignInButton.jsx
+- src/hooks/useRecipe.js
+- src/utils/calculator.js
+- src/utils/storage.js
+- src/utils/auth.js
+- src/utils/audioController.js
+
+Backend na Vercel:
+- api/recipes.js
+- api/auth/google.js
+- api/auth/session.js
+- api/auth/logout.js
+- api/_lib/googleIdentity.js
+- api/_lib/session.js
+- api/_lib/googleSheets.js
+
+
+13. RESUMO FINAL
+
+Hoje o V60-timer2 funciona como um app completo de preparo e historico:
+- calcula a receita 4:6
+- guia o brew com timer
+- mostra quanto despejar e qual target atingir
+- salva a receita usada no final
+- permite criar receitas manualmente
+- permite editar receitas salvas
+- protege o historico com login Google
+- grava tudo em uma planilha privada no Google Sheets
+
+A parte do History ficou com esta logica central:
+- simples na interface
+- privada no acesso
+- persistente no deploy
+- focada nos mesmos dados importantes da tela inicial
+

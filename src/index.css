@@ -413,6 +413,18 @@ body {
   min-height: 110px;
 }
 
+.discreet-note-field {
+  min-height: 96px;
+  line-height: 1.55;
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.discreet-note-field::placeholder {
+  color: rgba(224, 224, 224, 0.38);
+}
+
 .input-wrapper.read-only {
   opacity: 0.8;
 }
@@ -478,6 +490,22 @@ body {
 
 .history-edit-grid {
   margin-bottom: 4px;
+}
+
+.history-note-card {
+  margin-top: 14px;
+  padding: 14px 15px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.history-note-copy {
+  margin: 8px 0 0 0;
+  color: rgba(224, 224, 224, 0.86);
+  line-height: 1.6;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
 }
 
 .detail-card {

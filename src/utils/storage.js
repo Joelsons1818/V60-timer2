@@ -36,6 +36,7 @@ export function buildBrewLog(recipe, details = {}) {
     id: generatedId,
     date: new Date().toISOString(),
     coffeeName: details.coffeeName?.trim() || '',
+    notes: details.notes?.trim() || '',
     coffeeGrams: recipe.coffeeGrams,
     totalWater: recipe.totalWater,
     temperature: recipe.temperature,
