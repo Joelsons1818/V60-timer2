@@ -320,58 +320,24 @@ export function HistoryScreen({ onBack }) {
         <div className="history-list compact-history-list modern-history-list">
           {logs.map((log) => (
             <div key={log.id} className="history-entry-card history-entry-card-modern">
-              <div className="history-entry-shell">
-                <div className="history-entry-main">
-                  <div className="history-entry-top">
-                    <div className="history-entry-title-block">
-                      <strong>{log.coffeeName || 'Untitled Coffee'}</strong>
-                      <span className="section-note">{formatDate(log.date)}</span>
-                    </div>
-                    <div className="history-inline-badges">
-                      <span className="history-chip">{balanceLabels[log.balance]}</span>
-                      <span className="history-chip history-chip-soft">
-                        {log.strengthPoursCount} pours
-                      </span>
-                    </div>
+              <div className="history-entry-top history-entry-top-modern">
+                <div className="history-entry-title-block history-entry-title-block-modern">
+                  <strong>{log.coffeeName || 'Untitled Coffee'}</strong>
+                  <div className="history-entry-meta">
+                    <span className="section-note">{formatDate(log.date)}</span>
+                    <span className="history-meta-divider" aria-hidden="true">•</span>
+                    <span className="history-balance-text">{balanceLabels[log.balance]}</span>
+                    <span className="history-meta-divider" aria-hidden="true">•</span>
+                    <span className="history-stage-text">{log.strengthPoursCount} pours</span>
                   </div>
-
-                  <div className="history-compact-grid history-compact-grid-modern">
-                    <div className="history-metric">
-                      <span className="detail-label">Coffee</span>
-                      <strong>{log.coffeeGrams}g</strong>
-                    </div>
-                    <div className="history-metric">
-                      <span className="detail-label">Water</span>
-                      <strong>{log.totalWater}ml</strong>
-                    </div>
-                    <div className="history-metric">
-                      <span className="detail-label">Temp</span>
-                      <strong>{log.temperature}°C</strong>
-                    </div>
-                    <div className="history-metric">
-                      <span className="detail-label">Ratio</span>
-                      <strong>1:{log.ratio}</strong>
-                    </div>
-                    <div className="history-metric">
-                      <span className="detail-label">Time</span>
-                      <strong>~{Math.floor(log.totalTime / 60)}:{String(log.totalTime % 60).padStart(2, '0')}</strong>
-                    </div>
-                  </div>
-
-                  {log.notes && (
-                    <div className="history-note-card history-note-card-compact">
-                      <span className="detail-label">Observation</span>
-                      <p className="history-note-copy">{log.notes}</p>
-                    </div>
-                  )}
                 </div>
 
-                <div className="history-entry-actions">
-                  <button className="btn-secondary btn-inline history-action-btn" onClick={() => handleEdit(log)}>
+                <div className="history-entry-actions history-entry-actions-modern">
+                  <button className="btn-secondary btn-inline history-action-btn history-action-btn-modern" onClick={() => handleEdit(log)}>
                     Edit
                   </button>
                   <button
-                    className="btn-secondary btn-inline history-action-btn history-delete-btn"
+                    className="btn-secondary btn-inline history-action-btn history-action-btn-modern history-delete-btn"
                     onClick={() => handleDelete(log)}
                     disabled={busyLogId === log.id}
                   >
@@ -379,6 +345,38 @@ export function HistoryScreen({ onBack }) {
                   </button>
                 </div>
               </div>
+
+              <div className="history-stats-strip">
+                <div className="history-metric history-metric-modern">
+                  <span className="detail-label">Coffee</span>
+                  <strong>{log.coffeeGrams}g</strong>
+                </div>
+                <div className="history-metric history-metric-modern">
+                  <span className="detail-label">Water</span>
+                  <strong>{log.totalWater}ml</strong>
+                </div>
+                <div className="history-metric history-metric-modern">
+                  <span className="detail-label">Temp</span>
+                  <strong>{log.temperature}°C</strong>
+                </div>
+                <div className="history-metric history-metric-modern">
+                  <span className="detail-label">Ratio</span>
+                  <strong>1:{log.ratio}</strong>
+                </div>
+                <div className="history-metric history-metric-modern">
+                  <span className="detail-label">Time</span>
+                  <strong>
+                    ~{Math.floor(log.totalTime / 60)}:{String(log.totalTime % 60).padStart(2, '0')}
+                  </strong>
+                </div>
+              </div>
+
+              {log.notes && (
+                <div className="history-note-card history-note-card-modern">
+                  <span className="detail-label">Observation</span>
+                  <p className="history-note-copy">{log.notes}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>
