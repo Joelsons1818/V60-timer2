@@ -394,11 +394,12 @@ export const deleteRecipe = async (recipeId) => {
   );
   const rows = await getRecipeRows();
   const match = rows.find((entry) => entry.recipe.id === String(recipeId));
+  const sheetId = sheet?.properties?.sheetId;
 
-  if (!sheet?.properties?.sheetId || !match) {
+  if (sheetId === undefined || sheetId === null || !match) {
     throw new Error('Recipe not found in Google Sheets.');
   }
 
-  await deleteSheetRow(sheet.properties.sheetId, match.rowNumber);
+  await deleteSheetRow(sheetId, match.rowNumber);
   return { id: String(recipeId) };
 };
