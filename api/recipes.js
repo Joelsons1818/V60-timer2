@@ -1,4 +1,4 @@
-import { appendRecipe, listRecipes, updateRecipe } from './_lib/googleSheets.js';
+import { appendRecipe, deleteRecipe, listRecipes, updateRecipe } from './_lib/googleSheets.js';
 import { errorResponse, json, readJsonBody, rejectIfCrossOrigin } from './_lib/http.js';
 import { getSessionFromRequest } from './_lib/session.js';
 
@@ -90,6 +90,17 @@ export default {
         }
 
         return json(await updateRecipe(recipe));
+      }
+
+      if (request.method === 'DELETE') {
+        const payload = await readJsonBody(request);
+        const recipeId = payload?.recipe?.id;
+
+        if (!recipeId) {
+          return errorResponse('Recipe id is required.', 400);
+        }
+
+        return json(await deleteRecipe(recipeId));
       }
 
       return errorResponse('Method not allowed.', 405);

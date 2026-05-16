@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { calculateRecipe } from '../utils/calculator';
-import { loadBrewLogs, persistBrewLog, persistUpdatedBrewLog } from '../utils/storage';
+import {
+  loadBrewLogs,
+  persistBrewLog,
+  persistUpdatedBrewLog,
+  removeBrewLog,
+} from '../utils/storage';
 
 const balanceLabels = {
   acidity: 'Acidity',
@@ -76,6 +81,7 @@ export function HistoryScreen({ onBack }) {
   const [draft, setDraft] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [busyLogId, setBusyLogId] = useState('');
 
   const refreshLogs = async () => {
     try {
@@ -136,6 +142,31 @@ export function HistoryScreen({ onBack }) {
       await refreshLogs();
     } catch (error) {
       setErrorMessage(error.message || 'Unable to save recipe.');
+    }
+  };
+
+  const handleDelete = async (log) => {
+    const recipeName = log.coffeeName?.trim() || 'this recipe';
+    const confirmed = window.confirm(`Delete ${recipeName}?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setBusyLogId(log.id);
+      setErrorMessage('');
+      await removeBrewLog(log.id);
+
+      if (draft?.id === log.id) {
+        setDraft(null);
+      }
+
+      await refreshLogs();
+    } catch (error) {
+      setErrorMessage(error.message || 'Unable to delete recipe.');
+    } finally {
+      setBusyLogId('');
     }
   };
 
@@ -286,48 +317,68 @@ export function HistoryScreen({ onBack }) {
           </button>
         </div>
       ) : (
-        <div className="history-list compact-history-list">
+        <div className="history-list compact-history-list modern-history-list">
           {logs.map((log) => (
-            <div key={log.id} className="history-entry-card">
-              <div className="history-entry-top">
-                <div className="history-entry-title-block">
-                  <strong>{log.coffeeName || 'Untitled Coffee'}</strong>
-                  <span className="section-note">{formatDate(log.date)}</span>
-                </div>
-                <button className="btn-secondary btn-inline" onClick={() => handleEdit(log)}>
-                  Edit
-                </button>
-              </div>
+            <div key={log.id} className="history-entry-card history-entry-card-modern">
+              <div className="history-entry-shell">
+                <div className="history-entry-main">
+                  <div className="history-entry-top">
+                    <div className="history-entry-title-block">
+                      <strong>{log.coffeeName || 'Untitled Coffee'}</strong>
+                      <span className="section-note">{formatDate(log.date)}</span>
+                    </div>
+                    <div className="history-inline-badges">
+                      <span className="history-chip">{balanceLabels[log.balance]}</span>
+                      <span className="history-chip history-chip-soft">
+                        {log.strengthPoursCount} pours
+                      </span>
+                    </div>
+                  </div>
 
-              <div className="history-compact-grid">
-                <div className="history-metric">
-                  <span className="detail-label">Coffee</span>
-                  <strong>{log.coffeeGrams}g</strong>
+                  <div className="history-compact-grid history-compact-grid-modern">
+                    <div className="history-metric">
+                      <span className="detail-label">Coffee</span>
+                      <strong>{log.coffeeGrams}g</strong>
+                    </div>
+                    <div className="history-metric">
+                      <span className="detail-label">Water</span>
+                      <strong>{log.totalWater}ml</strong>
+                    </div>
+                    <div className="history-metric">
+                      <span className="detail-label">Temp</span>
+                      <strong>{log.temperature}°C</strong>
+                    </div>
+                    <div className="history-metric">
+                      <span className="detail-label">Ratio</span>
+                      <strong>1:{log.ratio}</strong>
+                    </div>
+                    <div className="history-metric">
+                      <span className="detail-label">Time</span>
+                      <strong>~{Math.floor(log.totalTime / 60)}:{String(log.totalTime % 60).padStart(2, '0')}</strong>
+                    </div>
+                  </div>
+
+                  {log.notes && (
+                    <div className="history-note-card history-note-card-compact">
+                      <span className="detail-label">Observation</span>
+                      <p className="history-note-copy">{log.notes}</p>
+                    </div>
+                  )}
                 </div>
-                <div className="history-metric">
-                  <span className="detail-label">Water</span>
-                  <strong>{log.totalWater}ml</strong>
-                </div>
-                <div className="history-metric">
-                  <span className="detail-label">Temp</span>
-                  <strong>{log.temperature}°C</strong>
-                </div>
-                <div className="history-metric">
-                  <span className="detail-label">Balance</span>
-                  <strong>{balanceLabels[log.balance]}</strong>
-                </div>
-                <div className="history-metric">
-                  <span className="detail-label">Stage 2</span>
-                  <strong>{log.strengthPoursCount} pours</strong>
+
+                <div className="history-entry-actions">
+                  <button className="btn-secondary btn-inline history-action-btn" onClick={() => handleEdit(log)}>
+                    Edit
+                  </button>
+                  <button
+                    className="btn-secondary btn-inline history-action-btn history-delete-btn"
+                    onClick={() => handleDelete(log)}
+                    disabled={busyLogId === log.id}
+                  >
+                    {busyLogId === log.id ? 'Deleting...' : 'Delete'}
+                  </button>
                 </div>
               </div>
-
-              {log.notes && (
-                <div className="history-note-card">
-                  <span className="detail-label">Observation</span>
-                  <p className="history-note-copy">{log.notes}</p>
-                </div>
-              )}
             </div>
           ))}
         </div>

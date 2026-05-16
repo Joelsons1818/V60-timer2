@@ -218,6 +218,26 @@ const appendSheetValues = async (range, values) => {
   );
 };
 
+const deleteSheetRow = async (sheetId, rowNumber) => {
+  await sheetRequest(':batchUpdate', {
+    method: 'POST',
+    body: JSON.stringify({
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: 'ROWS',
+              startIndex: rowNumber - 1,
+              endIndex: rowNumber,
+            },
+          },
+        },
+      ],
+    }),
+  });
+};
+
 const ensureSheetReady = async () => {
   const { sheetName } = getSheetsConfig();
   const metadata = await getSheetMetadata();
@@ -364,4 +384,21 @@ export const updateRecipe = async (recipe) => {
   );
 
   return recipe;
+};
+
+export const deleteRecipe = async (recipeId) => {
+  const { sheetName } = getSheetsConfig();
+  const metadata = await getSheetMetadata();
+  const sheet = (metadata.sheets || []).find(
+    (entry) => entry.properties?.title === sheetName,
+  );
+  const rows = await getRecipeRows();
+  const match = rows.find((entry) => entry.recipe.id === String(recipeId));
+
+  if (!sheet?.properties?.sheetId || !match) {
+    throw new Error('Recipe not found in Google Sheets.');
+  }
+
+  await deleteSheetRow(sheet.properties.sheetId, match.rowNumber);
+  return { id: String(recipeId) };
 };

@@ -71,6 +71,12 @@ export function updateBrewLog(updatedLog) {
   return logs;
 }
 
+export function deleteBrewLog(logId) {
+  const logs = readLogs().filter((log) => log.id !== logId);
+  writeLogs(logs);
+  return logs;
+}
+
 const normalizeError = async (response, fallbackMessage) => {
   const payload = await response.json().catch(() => null);
   return payload?.error || fallbackMessage;
@@ -125,6 +131,20 @@ export async function persistUpdatedBrewLog(log) {
     if (isDevelopment) {
       updateBrewLog(log);
       return log;
+    }
+
+    throw error;
+  }
+}
+
+export async function removeBrewLog(logId) {
+  try {
+    await requestRemoteStorage('DELETE', { id: logId });
+    return logId;
+  } catch (error) {
+    if (isDevelopment) {
+      deleteBrewLog(logId);
+      return logId;
     }
 
     throw error;
