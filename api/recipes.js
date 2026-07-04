@@ -30,6 +30,20 @@ const validateRecipe = (recipe) => {
     return 'Steps must be an array.';
   }
 
+  const ratio = Number(recipe.ratio);
+
+  if (!Number.isFinite(ratio) || ratio < 10 || ratio > 20) {
+    return 'Ratio must be between 10 and 20.';
+  }
+
+  if (recipe.grindSize !== undefined && recipe.grindSize !== '') {
+    const grindSize = Number(recipe.grindSize);
+
+    if (!Number.isFinite(grindSize) || grindSize < 0 || grindSize > 200) {
+      return 'Grind size must be between 0 and 200.';
+    }
+  }
+
   return null;
 };
 

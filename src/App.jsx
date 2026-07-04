@@ -32,6 +32,10 @@ function App() {
     setWaterAmount,
     temperature,
     setTemperature,
+    ratio,
+    setRatio,
+    grindSize,
+    setGrindSize,
     balance,
     setBalance,
     strengthPours,
@@ -170,9 +174,13 @@ function App() {
           recipe={recipe}
           setBalance={setBalance}
           setCoffeeGrams={setCoffeeGrams}
+          setGrindSize={setGrindSize}
+          setRatio={setRatio}
           setStrengthPours={setStrengthPours}
           setTemperature={setTemperature}
           setWaterAmount={setWaterAmount}
+          grindSize={grindSize}
+          ratio={ratio}
           strengthPours={strengthPours}
           temperature={temperature}
           user={user}

@@ -13,6 +13,10 @@ const balanceLabels = {
   sweet: 'Sweet',
 };
 
+const DEFAULT_RATIO = 15;
+const MIN_RATIO = 10;
+const MAX_RATIO = 20;
+
 const formatDate = (isoDate) => {
   const date = new Date(isoDate);
 
@@ -31,10 +35,42 @@ const parseNumber = (value, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const clamp = (value, min, max) => {
+  return Math.max(min, Math.min(max, value));
+};
+
+const roundToOneDecimal = (value) => {
+  return Math.round(value * 10) / 10;
+};
+
+const normalizeRatio = (value) => {
+  const parsed = parseNumber(value, DEFAULT_RATIO);
+
+  return Math.round(clamp(parsed, MIN_RATIO, MAX_RATIO) * 2) / 2;
+};
+
+const normalizeGrindSize = (value) => {
+  if (value === '' || value === null || value === undefined) {
+    return '';
+  }
+
+  return clamp(Math.round(parseNumber(value, 0)), 0, 200);
+};
+
+const formatRatio = (ratio) => {
+  const normalizedRatio = normalizeRatio(ratio);
+
+  return Number.isInteger(normalizedRatio)
+    ? String(normalizedRatio)
+    : normalizedRatio.toFixed(1);
+};
+
 const buildLogFromFields = (fields) => {
   const normalizedCoffee = Math.round(parseNumber(fields.coffeeGrams, 20) * 10) / 10;
   const normalizedWater = Math.max(1, Math.round(parseNumber(fields.totalWater, 300)));
   const normalizedTemperature = Math.max(1, Math.round(parseNumber(fields.temperature, 92)));
+  const normalizedRatio = normalizeRatio(fields.ratio);
+  const normalizedGrindSize = normalizeGrindSize(fields.grindSize);
   const normalizedBalance = ['acidity', 'balanced', 'sweet'].includes(fields.balance)
     ? fields.balance
     : 'balanced';
@@ -44,6 +80,7 @@ const buildLogFromFields = (fields) => {
     normalizedWater,
     normalizedBalance,
     normalizedStrengthPours,
+    normalizedRatio,
   );
 
   return {
@@ -54,6 +91,7 @@ const buildLogFromFields = (fields) => {
     coffeeGrams: recipe.coffeeGrams,
     totalWater: recipe.totalWater,
     temperature: normalizedTemperature,
+    grindSize: normalizedGrindSize,
     balance: recipe.balance,
     strengthPoursCount: recipe.strengthPoursCount,
     totalTime: recipe.totalTime,
@@ -104,6 +142,47 @@ export function HistoryScreen({ onBack }) {
       ...currentDraft,
       [field]: value,
     }));
+  };
+
+  const handleRecipeFieldChange = (field, value) => {
+    setDraft((currentDraft) => {
+      if (!currentDraft) {
+        return currentDraft;
+      }
+
+      const currentRatio = normalizeRatio(currentDraft.ratio);
+
+      if (field === 'totalWater') {
+        return {
+          ...currentDraft,
+          totalWater: value,
+          coffeeGrams: roundToOneDecimal(parseNumber(value, 0) / currentRatio),
+        };
+      }
+
+      if (field === 'coffeeGrams') {
+        return {
+          ...currentDraft,
+          coffeeGrams: value,
+          totalWater: Math.round(parseNumber(value, 0) * currentRatio),
+        };
+      }
+
+      if (field === 'ratio') {
+        const nextRatio = normalizeRatio(value);
+
+        return {
+          ...currentDraft,
+          ratio: nextRatio,
+          coffeeGrams: roundToOneDecimal(parseNumber(currentDraft.totalWater, 300) / nextRatio),
+        };
+      }
+
+      return {
+        ...currentDraft,
+        [field]: value,
+      };
+    });
   };
 
   const handleCreateNew = () => {
@@ -227,9 +306,11 @@ export function HistoryScreen({ onBack }) {
               <div className="input-wrapper compact-input">
                 <input
                   type="number"
+                  inputMode="decimal"
+                  enterKeyHint="done"
                   step="0.1"
                   value={draft.coffeeGrams}
-                  onChange={(event) => handleFieldChange('coffeeGrams', event.target.value)}
+                  onChange={(event) => handleRecipeFieldChange('coffeeGrams', event.target.value)}
                 />
                 <span className="unit compact-unit">g</span>
               </div>
@@ -240,9 +321,12 @@ export function HistoryScreen({ onBack }) {
               <div className="input-wrapper compact-input">
                 <input
                   type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  enterKeyHint="done"
                   step="1"
                   value={draft.totalWater}
-                  onChange={(event) => handleFieldChange('totalWater', event.target.value)}
+                  onChange={(event) => handleRecipeFieldChange('totalWater', event.target.value)}
                 />
                 <span className="unit compact-unit">ml</span>
               </div>
@@ -253,12 +337,55 @@ export function HistoryScreen({ onBack }) {
               <div className="input-wrapper compact-input">
                 <input
                   type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  enterKeyHint="done"
                   step="1"
                   value={draft.temperature}
                   onChange={(event) => handleFieldChange('temperature', event.target.value)}
                 />
                 <span className="unit compact-unit">°C</span>
               </div>
+            </div>
+
+            <div className="control-group compact-group">
+              <label>Grind</label>
+              <div className="input-wrapper compact-input">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  enterKeyHint="done"
+                  step="1"
+                  min="0"
+                  max="200"
+                  value={draft.grindSize}
+                  onChange={(event) => handleFieldChange('grindSize', event.target.value)}
+                  placeholder="--"
+                />
+                <span className="unit compact-unit">0-200</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="control-group ratio-control">
+            <div className="slider-heading">
+              <label>Ratio</label>
+              <strong>1:{formatRatio(draft.ratio)}</strong>
+            </div>
+            <input
+              className="range-control"
+              type="range"
+              min="10"
+              max="20"
+              step="0.5"
+              value={normalizeRatio(draft.ratio)}
+              onChange={(event) => handleRecipeFieldChange('ratio', event.target.value)}
+              aria-label="Coffee to water ratio"
+            />
+            <div className="range-captions">
+              <span>More concentrated</span>
+              <span>More diluted</span>
             </div>
           </div>
 
@@ -361,7 +488,11 @@ export function HistoryScreen({ onBack }) {
                 </div>
                 <div className="history-metric history-metric-modern">
                   <span className="detail-label">Ratio</span>
-                  <strong>1:{log.ratio}</strong>
+                  <strong>1:{formatRatio(log.ratio)}</strong>
+                </div>
+                <div className="history-metric history-metric-modern">
+                  <span className="detail-label">Grind</span>
+                  <strong>{log.grindSize === '' ? '--' : log.grindSize}</strong>
                 </div>
                 <div className="history-metric history-metric-modern">
                   <span className="detail-label">Time</span>

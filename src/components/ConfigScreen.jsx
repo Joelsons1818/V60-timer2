@@ -1,10 +1,18 @@
-import React from 'react';
+import { useEffect, useRef } from 'react';
+
+const formatRatio = (ratio) => {
+  return Number.isInteger(ratio) ? String(ratio) : ratio.toFixed(1);
+};
 
 export function ConfigScreen({
   authError,
   authMode,
   coffeeGrams,
+  grindSize,
+  ratio,
   setCoffeeGrams,
+  setGrindSize,
+  setRatio,
   waterAmount,
   setWaterAmount,
   temperature,
@@ -21,6 +29,19 @@ export function ConfigScreen({
   user,
 }) {
   const isCheckingAuth = authMode === 'loading';
+  const waterInputRef = useRef(null);
+  const displayedRatio = formatRatio(ratio);
+
+  useEffect(() => {
+    const focusTimeout = window.setTimeout(() => {
+      waterInputRef.current?.focus({ preventScroll: true });
+      waterInputRef.current?.select();
+    }, 150);
+
+    return () => {
+      window.clearTimeout(focusTimeout);
+    };
+  }, []);
 
   return (
     <div className="card">
@@ -57,12 +78,35 @@ export function ConfigScreen({
         <p className="subtitle">Tetsu Kasuya V60 Guide</p>
       </header>
 
-      <div className="primary-input-grid">
+      <div className="primary-input-grid brew-input-grid">
+        <div className="control-group compact-group">
+          <label>Water</label>
+          <div className="input-wrapper compact-input">
+            <input
+              ref={waterInputRef}
+              type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              enterKeyHint="done"
+              autoFocus
+              value={waterAmount}
+              onChange={(event) => setWaterAmount(Number(event.target.value))}
+              onFocus={(event) => event.target.select()}
+              step="1"
+              min="150"
+              max="1500"
+            />
+            <span className="unit compact-unit">ml</span>
+          </div>
+        </div>
+
         <div className="control-group compact-group">
           <label>Coffee</label>
           <div className="input-wrapper compact-input">
             <input
               type="number"
+              inputMode="decimal"
+              enterKeyHint="done"
               value={coffeeGrams}
               onChange={(event) => setCoffeeGrams(Number(event.target.value))}
               step="0.1"
@@ -74,25 +118,13 @@ export function ConfigScreen({
         </div>
 
         <div className="control-group compact-group">
-          <label>Water</label>
-          <div className="input-wrapper compact-input">
-            <input
-              type="number"
-              value={waterAmount}
-              onChange={(event) => setWaterAmount(Number(event.target.value))}
-              step="1"
-              min="150"
-              max="1500"
-            />
-            <span className="unit compact-unit">ml</span>
-          </div>
-        </div>
-
-        <div className="control-group compact-group">
           <label>Temp</label>
           <div className="input-wrapper compact-input">
             <input
               type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              enterKeyHint="done"
               value={temperature}
               onChange={(event) => setTemperature(Number(event.target.value))}
               step="1"
@@ -101,6 +133,46 @@ export function ConfigScreen({
             />
             <span className="unit compact-unit">°C</span>
           </div>
+        </div>
+
+        <div className="control-group compact-group">
+          <label>Grind</label>
+          <div className="input-wrapper compact-input">
+            <input
+              type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              enterKeyHint="done"
+              value={grindSize}
+              onChange={(event) => setGrindSize(event.target.value)}
+              step="1"
+              min="0"
+              max="200"
+              placeholder="--"
+            />
+            <span className="unit compact-unit">0-200</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="control-group ratio-control">
+        <div className="slider-heading">
+          <label>Ratio</label>
+          <strong>1:{displayedRatio}</strong>
+        </div>
+        <input
+          className="range-control"
+          type="range"
+          min="10"
+          max="20"
+          step="0.5"
+          value={ratio}
+          onChange={(event) => setRatio(Number(event.target.value))}
+          aria-label="Coffee to water ratio"
+        />
+        <div className="range-captions">
+          <span>More concentrated</span>
+          <span>More diluted</span>
         </div>
       </div>
 
@@ -158,12 +230,12 @@ export function ConfigScreen({
           <span className="value">{recipe.totalWater}ml</span>
         </div>
         <div className="summary-item">
-          <span className="label">Temp</span>
-          <span className="value">{temperature}°C</span>
+          <span className="label">Coffee</span>
+          <span className="value">{recipe.coffeeGrams}g</span>
         </div>
         <div className="summary-item">
           <span className="label">Ratio</span>
-          <span className="value">1:15</span>
+          <span className="value">1:{displayedRatio}</span>
         </div>
         <div className="summary-item">
           <span className="label">Time</span>

@@ -40,6 +40,7 @@ export function buildBrewLog(recipe, details = {}) {
     coffeeGrams: recipe.coffeeGrams,
     totalWater: recipe.totalWater,
     temperature: recipe.temperature,
+    grindSize: recipe.grindSize,
     balance: recipe.balance,
     strengthPoursCount: recipe.strengthPoursCount,
     totalTime: recipe.totalTime,

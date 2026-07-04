@@ -18,6 +18,7 @@ const RECIPE_COLUMNS = [
   'ratio',
   'stepsJson',
   'updatedAt',
+  'grindSize',
 ];
 
 let accessTokenCache = {
@@ -303,6 +304,7 @@ const serializeRecipe = (recipe) => {
     recipe.ratio ?? 15,
     JSON.stringify(recipe.steps ?? []),
     updatedAt,
+    recipe.grindSize ?? '',
   ];
 };
 
@@ -321,6 +323,7 @@ const toRecipe = (row) => {
     ratio = 15,
     stepsJson = '[]',
     updatedAt = '',
+    grindSize = '',
   ] = row;
 
   return {
@@ -337,6 +340,7 @@ const toRecipe = (row) => {
     ratio: parseNumber(ratio, 15),
     steps: parseSteps(String(stepsJson)),
     updatedAt: String(updatedAt),
+    grindSize: grindSize === '' ? '' : parseNumber(grindSize),
   };
 };
 

@@ -148,6 +148,9 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
     const remainingInStep = Math.max(0, stepDuration - timeInStep);
     const nextStep = recipe.steps[currentStepIndex + 1];
     const shouldKeepAwake = isPrepping || (isRunning && !isFinished);
+    const displayedRatio = Number.isInteger(recipe.ratio)
+        ? String(recipe.ratio)
+        : recipe.ratio.toFixed(1);
 
     useEffect(() => {
         keepAwakeRef.current = shouldKeepAwake;
@@ -341,7 +344,13 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
                 <span className="divider">|</span>
                 <span>{recipe.totalWater}ml Water</span>
                 <span className="divider">|</span>
-                <span>1:15 Ratio</span>
+                <span>1:{displayedRatio} Ratio</span>
+                {recipe.grindSize !== '' && (
+                    <>
+                        <span className="divider">|</span>
+                        <span>Grind {recipe.grindSize}</span>
+                    </>
+                )}
                 <span className="divider">|</span>
                 <span>{recipe.strengthPoursCount} Pours (Phase 2)</span>
             </div>

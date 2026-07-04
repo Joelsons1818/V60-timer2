@@ -5,6 +5,7 @@
  * @param {number} totalWaterInput - Total water in ml.
  * @param {string} balance - 'sweet', 'balanced', or 'acidity'.
  * @param {number} strengthPoursCount - Number of pours for strength phase (2, 3, 4, 5).
+ * @param {number} ratioInput - Brew ratio, from 1:10 to 1:20.
  * @returns {object} Recipe details including steps, total water, and ratio.
  */
 export function calculateRecipe(
@@ -12,10 +13,11 @@ export function calculateRecipe(
   totalWaterInput,
   balance = 'balanced',
   strengthPoursCount = 2,
+  ratioInput = 15,
 ) {
-  const RATIO = 15;
+  const ratio = Math.max(10, Math.min(20, Number(ratioInput) || 15));
   const normalizedCoffee = Number(coffeeGrams) || 0;
-  const totalWater = Math.round(Number(totalWaterInput) || normalizedCoffee * RATIO);
+  const totalWater = Math.round(Number(totalWaterInput) || normalizedCoffee * ratio);
 
   // Phase 1: Balance (40% of total water)
   // FIXED TIME: 90 seconds total (45s per pour)
@@ -108,6 +110,6 @@ export function calculateRecipe(
     strengthPoursCount: numPours,
     steps,
     totalTime: accumulatedTime,
-    ratio: RATIO
+    ratio,
   };
 }

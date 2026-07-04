@@ -7,6 +7,10 @@ const balanceLabels = {
   sweet: 'Sweet',
 };
 
+const formatRatio = (ratio) => {
+  return Number.isInteger(ratio) ? String(ratio) : ratio.toFixed(1);
+};
+
 export function ReviewScreen({
   authError = '',
   isLocalMode = false,
@@ -20,6 +24,8 @@ export function ReviewScreen({
   const canSave = isLocalMode || Boolean(user);
   const [coffeeName, setCoffeeName] = useState('');
   const [notes, setNotes] = useState('');
+  const displayedRatio = formatRatio(recipe.ratio);
+  const displayedGrind = recipe.grindSize === '' ? '--' : recipe.grindSize;
 
   const handleSave = () => {
     onSave({
@@ -59,6 +65,14 @@ export function ReviewScreen({
           <div className="history-metric">
             <span className="detail-label">Temp</span>
             <strong>{recipe.temperature}°C</strong>
+          </div>
+          <div className="history-metric">
+            <span className="detail-label">Ratio</span>
+            <strong>1:{displayedRatio}</strong>
+          </div>
+          <div className="history-metric">
+            <span className="detail-label">Grind</span>
+            <strong>{displayedGrind}</strong>
           </div>
           <div className="history-metric">
             <span className="detail-label">Balance</span>

@@ -178,6 +178,11 @@ body {
   gap: 12px;
 }
 
+.brew-input-grid,
+.history-edit-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 /* Controls */
 .control-group {
   display: flex;
@@ -220,6 +225,10 @@ body {
   width: 100%;
   outline: none;
   font-weight: 700;
+}
+
+.input-wrapper input::placeholder {
+  color: rgba(224, 224, 224, 0.38);
 }
 
 .compact-input {
@@ -276,6 +285,38 @@ body {
   font-style: italic;
   min-height: 1.2em;
   /* Prevent layout jump */
+}
+
+.ratio-control {
+  gap: 10px;
+}
+
+.slider-heading,
+.range-captions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.slider-heading label {
+  margin-left: 0;
+}
+
+.slider-heading strong {
+  color: var(--color-accent);
+  font-size: 1.05rem;
+}
+
+.range-control {
+  width: 100%;
+  min-height: 32px;
+  accent-color: var(--color-accent);
+}
+
+.range-captions {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
 }
 
 /* Summary */
@@ -590,7 +631,7 @@ body {
 
 .history-stats-strip {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1186,7 +1227,7 @@ body {
   }
 
   .history-edit-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .main-timer {
