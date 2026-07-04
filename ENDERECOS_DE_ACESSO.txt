@@ -1,0 +1,15 @@
+# Endereços de Acesso - V60 Timer
+
+Para acessar o aplicativo, certifique-se de que o computador onde ele está rodando (este computador) esteja ligado e com o servidor ativo (`npm run dev -- --host`).
+
+## 1. Acesso Neste Computador (Local)
+*   Link: http://localhost:5173
+
+## 2. Acesso Pelo Celular (Wi-Fi)
+*   Certifique-se de que o celular está no mesmo Wi-Fi.
+*   Link: http://192.168.68.114:5173
+
+## Como Instalar no Celular
+1.  Abra o link acima no Chrome (Android) ou Safari (iOS).
+2.  **Android**: Menu -> "Instalar App".
+3.  **iOS**: Botão Compartilhar -> "Adicionar à Tela de Início".

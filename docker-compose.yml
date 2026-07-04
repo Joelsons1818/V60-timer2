@@ -1,0 +1,11 @@
+version: '3'
+services:
+  v60-timer:
+    image: nginx:alpine
+    container_name: v60-timer
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./dist:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf

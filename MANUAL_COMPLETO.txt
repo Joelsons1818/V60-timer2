@@ -1,0 +1,52 @@
+# MANUAL DO V60 TIMER (VERSÃO FINAL)
+
+Este arquivo contém tudo o que você precisa para usar o aplicativo.
+
+--- PARTE 1: RODANDO NO SEU COMPUTADOR (LOCAL) ---
+Se você quiser abrir o app agora mesmo no seu Mac, sem usar o NAS:
+
+1. Localize o arquivo `INICIAR_APP.command` nesta pasta.
+2. Dê dois cliques nele.
+3. O app abrirá no seu navegador.
+   (O terminal fechará sozinho).
+
+--- PARTE 2: INSTALANDO NO NAS (ZIMAOS) ---
+Para deixar o app disponível 24h para a casa toda:
+
+1. Copie a pasta `dist` e o arquivo `docker-compose.yml` para o seu NAS (crie uma pasta `v60-timer`).
+
+2. No ZimaOS, vá em **App Store** -> **Instalação Personalizada**.
+
+3. Tente clicar no ícone **Importar** (topo da janela) e selecione o `docker-compose.yml`.
+
+4. **SE O IMPORTAR NÃO FUNCIONAR**, preencha manualmente assim:
+   *   **Imagens de Docker**: `nginx:alpine`
+   *   **Título**: `v60-timer`
+   *   **Web UI**: `:Portas`: `8080`
+   *   **Portas**:
+       *   Esquerda (Host): `8080`  |  Direita (Container): `80`
+   *   **Volumes**:
+       *   Esquerda (Host): Selecione a pasta `dist` no NAS.
+       *   Direita (Container): `/usr/share/nginx/html`
+       *   (Opcional): Selecione `nginx.conf` na esquerda e `/etc/nginx/conf.d/default.conf` na direita.
+
+5. Clique em **Instalar**.
+
+--- PARTE 3: ACESSANDO PELO CELULAR E COMPUTADOR (VIA NAS) ---
+Uma vez instalado no NAS, você pode acessar de qualquer lugar da casa:
+
+**Link de Acesso**:
+http://[IP-DO-SEU-NAS]:8080
+
+(Substitua `[IP-DO-SEU-NAS]` pelo número que aparece no navegador quando você abre o ZimaOS. Ex: `192.168.0.50`).
+
+**No iPhone/Android**:
+1. Abra esse link no Safari ou Chrome.
+2. Toque no botão de Compartilhar/Menu.
+3. Escolha "Adicionar à Tela de Início".
+4. O ícone do V60 Timer aparecerá como um app nativo.
+
+--- DICAS EXTRAS ---
+*   **Som**: O som funciona no iPhone (basta tocar na tela para iniciar).
+*   **Background**: Você pode sair do app ou desligar a tela que o timer continua exato.
+*   **Nova Receita**: Ao final, use o botão para reiniciar.

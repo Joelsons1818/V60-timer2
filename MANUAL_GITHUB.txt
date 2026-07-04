@@ -1,0 +1,16 @@
+COMO SUBIR SEU PROJETO NO GITHUB
+
+Seu projeto já está configurado para o repositório:
+https://github.com/Joelsons1818/v60-timer.git
+
+--- COMANDOS RÁPIDOS ---
+Se você fizer alterações no futuro e quiser enviar para a nuvem, abra o terminal nesta pasta e rode:
+
+1. SALVAR ALTERAÇÕES LOCAIS:
+   git add .
+   git commit -m "Descreva o que você mudou"
+
+2. ENVIAR PARA O GITHUB:
+   git push
+
+Isso é tudo!

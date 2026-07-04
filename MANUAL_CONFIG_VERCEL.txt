@@ -1,0 +1,49 @@
+COMO CONFIGURAR VERCEL ANALYTICS, SPEED INSIGHTS E GITHUB
+
+Este documento registra os passos tomados para adicionar as ferramentas de monitoramento da Vercel no projeto V60 Timer e como conectar o repositório do GitHub para deploy automático.
+
+--- 1. WEB ANALYTICS (Visitantes e Page Views) ---
+
+O Web Analytics permite contabilizar quantos acessos o seu aplicativo recebe, exibindo tudo no painel da Vercel.
+
+Passos para instalar:
+1. No terminal do projeto, instale o pacote oficial da Vercel:
+   npm i @vercel/analytics
+
+2. Abra o arquivo principal do seu aplicativo (no nosso caso, src/App.jsx).
+3. Importe o componente no topo do arquivo:
+   import { Analytics } from '@vercel/analytics/react';
+
+4. Adicione o componente `<Analytics />` no retorno (return) principal do App, preferencialmente no final, antes de fechar a div principal.
+
+--- 2. SPEED INSIGHTS (Performance do Site) ---
+
+O Speed Insights avalia o desempenho do site no mundo real (tempo de carregamento, responsividade, etc.).
+
+Passos para instalar:
+1. No terminal, instale o pacote correspondente:
+   npm i @vercel/speed-insights
+
+2. Novamente, no arquivo principal (src/App.jsx), importe o componente:
+   import { SpeedInsights } from '@vercel/speed-insights/react';
+
+3. Adicione o componente `<SpeedInsights />` logo abaixo do `<Analytics />` no retorno principal do App.
+
+--- 3. CONECTAR VERCEL AO GITHUB (Deploy Automático) ---
+
+Para que as atualizações do site vão para o ar automaticamente toda vez que você fizer um "Push" (sincronizar pelo GitHub Desktop ou VS Code), é preciso vincular o repositório.
+
+Via Terminal (Vercel CLI):
+1. Certifique-se de que o projeto já está linkado localmente à Vercel.
+2. Rode o comando associando a URL do seu repositório:
+   npx vercel git connect https://github.com/Joelsons1818/v60-timer.git
+
+Alternativa pelo Site da Vercel:
+1. Acesse o painel do seu projeto em vercel.com
+2. Vá em Settings (Configurações) > Git.
+3. Na seção "Connected Git Repository", selecione "GitHub" e procure pelo seu repositório (ex: Joelsons1818/v60-timer) para conectá-lo.
+
+Pronto! Com isso configurado:
+- Todo acesso será medido no painel Analytics.
+- Todo ganho ou perda de lentidão será medido no painel Speed Insights.
+- Toda modificação enviada ao GitHub atualizará o site oficial sozinho em poucos segundos!
