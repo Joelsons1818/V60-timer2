@@ -506,28 +506,33 @@ export function HistoryScreen({ onBack }) {
                     </div>
                   </div>
 
-                  <div className="history-stats-strip">
-                    <div className="history-metric history-metric-modern">
-                      <span className="detail-label">Coffee</span>
-                      <strong>{coffeeGrams}g</strong>
+                  <div className="history-stats-stack">
+                    <div className="history-stats-strip history-stats-strip-primary">
+                      <div className="history-metric history-metric-modern">
+                        <span className="detail-label">Coffee</span>
+                        <strong>{coffeeGrams}g</strong>
+                      </div>
+                      <div className="history-metric history-metric-modern">
+                        <span className="detail-label">Water</span>
+                        <strong>{log.totalWater}ml</strong>
+                      </div>
+                      <div className="history-metric history-metric-modern">
+                        <span className="detail-label">Temp</span>
+                        <strong>{log.temperature}°C</strong>
+                      </div>
                     </div>
-                    <div className="history-metric history-metric-modern">
-                      <span className="detail-label">Water</span>
-                      <strong>{log.totalWater}ml</strong>
-                    </div>
-                    <div className="history-metric history-metric-modern">
-                      <span className="detail-label">Temp</span>
-                      <strong>{log.temperature}°C</strong>
-                    </div>
-                    <div className="history-metric history-metric-modern">
-                      <span className="detail-label">Ratio</span>
-                      <strong>1:{formatRatio(log.ratio)}</strong>
-                    </div>
-                    <div className="history-metric history-metric-modern">
-                      <span className="detail-label">Time</span>
-                      <strong>
-                        ~{Math.floor(log.totalTime / 60)}:{String(log.totalTime % 60).padStart(2, '0')}
-                      </strong>
+
+                    <div className="history-stats-strip history-stats-strip-secondary">
+                      <div className="history-metric history-metric-modern">
+                        <span className="detail-label">Ratio</span>
+                        <strong>1:{formatRatio(log.ratio)}</strong>
+                      </div>
+                      <div className="history-metric history-metric-modern">
+                        <span className="detail-label">Time</span>
+                        <strong>
+                          ~{Math.floor(log.totalTime / 60)}:{String(log.totalTime % 60).padStart(2, '0')}
+                        </strong>
+                      </div>
                     </div>
                   </div>
 
