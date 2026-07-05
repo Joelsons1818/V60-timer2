@@ -1,5 +1,3 @@
-import { useEffect, useRef } from 'react';
-
 const formatRatio = (ratio) => {
   return Number.isInteger(ratio) ? String(ratio) : ratio.toFixed(1);
 };
@@ -33,19 +31,7 @@ export function ConfigScreen({
   user,
 }) {
   const isCheckingAuth = authMode === 'loading';
-  const waterInputRef = useRef(null);
   const displayedRatio = formatRatio(ratio);
-
-  useEffect(() => {
-    const focusTimeout = window.setTimeout(() => {
-      waterInputRef.current?.focus({ preventScroll: true });
-      waterInputRef.current?.select();
-    }, 150);
-
-    return () => {
-      window.clearTimeout(focusTimeout);
-    };
-  }, []);
 
   return (
     <div className="card">
@@ -87,15 +73,12 @@ export function ConfigScreen({
           <label>Water</label>
           <div className="input-wrapper compact-input">
             <input
-              ref={waterInputRef}
               type="number"
               inputMode="numeric"
               pattern="[0-9]*"
               enterKeyHint="done"
-              autoFocus
               value={waterAmount}
               onChange={(event) => setWaterAmount(getNumericInputValue(event.target.value))}
-              onFocus={(event) => event.target.select()}
               step="1"
               min="150"
               max="1500"
