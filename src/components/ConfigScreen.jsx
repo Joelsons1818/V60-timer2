@@ -4,6 +4,10 @@ const formatRatio = (ratio) => {
   return Number.isInteger(ratio) ? String(ratio) : ratio.toFixed(1);
 };
 
+const getNumericInputValue = (value) => {
+  return value === '' ? '' : Number(value);
+};
+
 export function ConfigScreen({
   authError,
   authMode,
@@ -90,7 +94,7 @@ export function ConfigScreen({
               enterKeyHint="done"
               autoFocus
               value={waterAmount}
-              onChange={(event) => setWaterAmount(Number(event.target.value))}
+              onChange={(event) => setWaterAmount(getNumericInputValue(event.target.value))}
               onFocus={(event) => event.target.select()}
               step="1"
               min="150"
@@ -108,7 +112,7 @@ export function ConfigScreen({
               inputMode="decimal"
               enterKeyHint="done"
               value={coffeeGrams}
-              onChange={(event) => setCoffeeGrams(Number(event.target.value))}
+              onChange={(event) => setCoffeeGrams(getNumericInputValue(event.target.value))}
               step="0.1"
               min="10"
               max="100"
@@ -126,7 +130,7 @@ export function ConfigScreen({
               pattern="[0-9]*"
               enterKeyHint="done"
               value={temperature}
-              onChange={(event) => setTemperature(Number(event.target.value))}
+              onChange={(event) => setTemperature(getNumericInputValue(event.target.value))}
               step="1"
               min="75"
               max="100"

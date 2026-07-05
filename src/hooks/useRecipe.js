@@ -46,12 +46,24 @@ export function useRecipe() {
 
     // Sync Water when Coffee changes
     const updateCoffee = (grams) => {
+        if (grams === '') {
+            setCoffeeGrams('');
+            setWaterAmount('');
+            return;
+        }
+
         setCoffeeGrams(grams);
         setWaterAmount(Math.round(grams * ratio));
     };
 
     // Sync Coffee when Water changes
     const updateWater = (ml) => {
+        if (ml === '') {
+            setWaterAmount('');
+            setCoffeeGrams('');
+            return;
+        }
+
         setWaterAmount(ml);
         setCoffeeGrams(roundToOneDecimal(ml / ratio));
     };
@@ -60,7 +72,7 @@ export function useRecipe() {
         const nextRatio = normalizeRatio(value);
 
         setRatioState(nextRatio);
-        setCoffeeGrams(roundToOneDecimal(waterAmount / nextRatio));
+        setCoffeeGrams(waterAmount === '' ? '' : roundToOneDecimal(waterAmount / nextRatio));
     };
 
     const recipe = useMemo(() => {
