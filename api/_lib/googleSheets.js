@@ -278,6 +278,23 @@ const parseNumber = (value, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const roundToOneDecimal = (value) => {
+  return Math.round(value * 10) / 10;
+};
+
+const normalizeCoffeeGrams = (coffeeGrams, totalWater, ratio) => {
+  const parsedCoffee = parseNumber(coffeeGrams);
+
+  if (parsedCoffee > 0) {
+    return roundToOneDecimal(parsedCoffee);
+  }
+
+  const parsedWater = parseNumber(totalWater);
+  const parsedRatio = parseNumber(ratio, 15);
+
+  return parsedWater > 0 ? roundToOneDecimal(parsedWater / parsedRatio) : 0;
+};
+
 const parseSteps = (value) => {
   try {
     const parsed = JSON.parse(value || '[]');
@@ -295,7 +312,7 @@ const serializeRecipe = (recipe) => {
     recipe.date,
     recipe.coffeeName ?? '',
     recipe.notes ?? '',
-    recipe.coffeeGrams,
+    normalizeCoffeeGrams(recipe.coffeeGrams, recipe.totalWater, recipe.ratio),
     recipe.totalWater,
     recipe.temperature,
     recipe.balance,
@@ -331,7 +348,7 @@ const toRecipe = (row) => {
     date: String(date),
     coffeeName: String(coffeeName),
     notes: String(notes),
-    coffeeGrams: parseNumber(coffeeGrams),
+    coffeeGrams: normalizeCoffeeGrams(coffeeGrams, totalWater, ratio),
     totalWater: parseNumber(totalWater),
     temperature: parseNumber(temperature),
     balance: String(balance),

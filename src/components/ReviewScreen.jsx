@@ -53,34 +53,42 @@ export function ReviewScreen({
           <strong>Current Recipe</strong>
         </div>
 
-        <div className="history-compact-grid">
-          <div className="history-metric">
-            <span className="detail-label">Coffee</span>
-            <strong>{recipe.coffeeGrams}g</strong>
+        <div className="review-metric-stack">
+          <div className="review-metric-row review-metric-row-three">
+            <div className="history-metric">
+              <span className="detail-label">Coffee</span>
+              <strong>{recipe.coffeeGrams}g</strong>
+            </div>
+            <div className="history-metric">
+              <span className="detail-label">Water</span>
+              <strong>{recipe.totalWater}ml</strong>
+            </div>
+            <div className="history-metric">
+              <span className="detail-label">Temp</span>
+              <strong>{recipe.temperature}°C</strong>
+            </div>
           </div>
-          <div className="history-metric">
-            <span className="detail-label">Water</span>
-            <strong>{recipe.totalWater}ml</strong>
+
+          <div className="review-metric-row review-metric-row-two">
+            <div className="history-metric">
+              <span className="detail-label">Ratio</span>
+              <strong>1:{displayedRatio}</strong>
+            </div>
+            <div className="history-metric">
+              <span className="detail-label">Grind</span>
+              <strong>{displayedGrind}</strong>
+            </div>
           </div>
-          <div className="history-metric">
-            <span className="detail-label">Temp</span>
-            <strong>{recipe.temperature}°C</strong>
-          </div>
-          <div className="history-metric">
-            <span className="detail-label">Ratio</span>
-            <strong>1:{displayedRatio}</strong>
-          </div>
-          <div className="history-metric">
-            <span className="detail-label">Grind</span>
-            <strong>{displayedGrind}</strong>
-          </div>
-          <div className="history-metric">
-            <span className="detail-label">Balance</span>
-            <strong>{balanceLabels[recipe.balance]}</strong>
-          </div>
-          <div className="history-metric">
-            <span className="detail-label">Stage 2</span>
-            <strong>{recipe.strengthPoursCount} pours</strong>
+
+          <div className="review-metric-row review-metric-row-two">
+            <div className="history-metric">
+              <span className="detail-label">Balance</span>
+              <strong>{balanceLabels[recipe.balance]}</strong>
+            </div>
+            <div className="history-metric">
+              <span className="detail-label">Stage 2</span>
+              <strong>{recipe.strengthPoursCount} pours</strong>
+            </div>
           </div>
         </div>
       </div>

@@ -16,8 +16,10 @@ export function calculateRecipe(
   ratioInput = 15,
 ) {
   const ratio = Math.max(10, Math.min(20, Number(ratioInput) || 15));
-  const normalizedCoffee = Number(coffeeGrams) || 0;
-  const totalWater = Math.round(Number(totalWaterInput) || normalizedCoffee * ratio);
+  const inputCoffee = Number(coffeeGrams) || 0;
+  const inputWater = Number(totalWaterInput) || 0;
+  const totalWater = Math.round(inputWater || inputCoffee * ratio);
+  const normalizedCoffee = inputCoffee || (totalWater ? totalWater / ratio : 0);
 
   // Phase 1: Balance (40% of total water)
   // FIXED TIME: 90 seconds total (45s per pour)

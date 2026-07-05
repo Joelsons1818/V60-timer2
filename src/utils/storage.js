@@ -24,6 +24,23 @@ const writeLogs = (logs) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
 };
 
+const roundToOneDecimal = (value) => {
+  return Math.round(value * 10) / 10;
+};
+
+const normalizeCoffeeGrams = (recipe) => {
+  const coffeeGrams = Number(recipe.coffeeGrams);
+
+  if (Number.isFinite(coffeeGrams) && coffeeGrams > 0) {
+    return roundToOneDecimal(coffeeGrams);
+  }
+
+  const totalWater = Number(recipe.totalWater);
+  const ratio = Number(recipe.ratio) || 15;
+
+  return totalWater > 0 ? roundToOneDecimal(totalWater / ratio) : 0;
+};
+
 export function getBrewLogs() {
   return readLogs();
 }
@@ -37,7 +54,7 @@ export function buildBrewLog(recipe, details = {}) {
     date: new Date().toISOString(),
     coffeeName: details.coffeeName?.trim() || '',
     notes: details.notes?.trim() || '',
-    coffeeGrams: recipe.coffeeGrams,
+    coffeeGrams: normalizeCoffeeGrams(recipe),
     totalWater: recipe.totalWater,
     temperature: recipe.temperature,
     grindSize: recipe.grindSize,

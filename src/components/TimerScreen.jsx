@@ -233,6 +233,39 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
         releaseScreenWakeLock(wakeLockRef);
     };
 
+    const handleSkipStep = () => {
+        if (isFinished || isPrepping || !currentStep) {
+            return;
+        }
+
+        audioController.resume();
+
+        const targetTime = Math.min(recipe.totalTime, stepStart + stepDuration);
+        lastPlayedRef.current = -1;
+
+        if (isRunning) {
+            startTimeRef.current = Date.now() - (targetTime * 1000);
+        }
+
+        setElapsedTime(targetTime);
+
+        if (targetTime >= recipe.totalTime) {
+            setIsFinished(true);
+            setIsRunning(false);
+
+            if (!finishHandledRef.current) {
+                finishHandledRef.current = true;
+                audioController.playTone(1500, 'triangle', 0.15);
+
+                if (onFinish) {
+                    finishTimeoutRef.current = window.setTimeout(() => {
+                        onFinish();
+                    }, 800);
+                }
+            }
+        }
+    };
+
     const handlePrepInteraction = () => {
         audioController.resume();
         requestScreenWakeLock(wakeLockRef, keepAwakeRef);
@@ -331,6 +364,11 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
                 {!isFinished && (
                     <button className={`btn-primary ${isRunning ? 'pause' : 'start'}`} onClick={toggleTimer}>
                         {isRunning ? 'Pause' : 'Start'}
+                    </button>
+                )}
+                {!isFinished && (
+                    <button className="btn-secondary timer-skip-button" onClick={handleSkipStep}>
+                        {nextStep ? 'Next Step' : 'Finish Brew'}
                     </button>
                 )}
                 <button className="btn-secondary" onClick={onReset}>

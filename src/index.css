@@ -497,6 +497,25 @@ body {
   padding: 20px;
 }
 
+.review-metric-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-metric-row {
+  display: grid;
+  gap: 10px;
+}
+
+.review-metric-row-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.review-metric-row-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .history-entry-top {
   display: flex;
   justify-content: space-between;
@@ -629,9 +648,45 @@ body {
   background: rgba(255, 255, 255, 0.035);
 }
 
+.history-method-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.history-method-chip {
+  background: rgba(212, 163, 115, 0.1);
+  border: 1px solid rgba(212, 163, 115, 0.18);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.history-method-chip strong {
+  color: var(--color-accent);
+  font-size: 1.05rem;
+  line-height: 1.15;
+}
+
+.history-method-chip.balance-acidity strong {
+  color: #8ed7ff;
+}
+
+.history-method-chip.balance-sweet strong {
+  color: #ffd18e;
+}
+
+.history-method-chip.balance-balanced strong {
+  color: #b8f0cf;
+}
+
 .history-stats-strip {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1026,6 +1081,11 @@ body {
   background-color: rgba(255, 255, 255, 0.1);
   color: var(--color-text-primary);
   box-shadow: none;
+}
+
+.timer-skip-button {
+  border-color: rgba(212, 163, 115, 0.26);
+  color: var(--color-accent);
 }
 
 /* Recipe Footer */

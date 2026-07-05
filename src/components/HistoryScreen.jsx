@@ -14,6 +14,7 @@ const balanceLabels = {
 };
 
 const DEFAULT_RATIO = 15;
+const DEFAULT_GRIND_SIZE = 120;
 const MIN_RATIO = 10;
 const MAX_RATIO = 20;
 
@@ -43,6 +44,19 @@ const roundToOneDecimal = (value) => {
   return Math.round(value * 10) / 10;
 };
 
+const normalizeCoffeeGrams = (coffeeGrams, totalWater, ratio) => {
+  const parsedCoffee = parseNumber(coffeeGrams);
+
+  if (parsedCoffee > 0) {
+    return roundToOneDecimal(parsedCoffee);
+  }
+
+  const parsedWater = parseNumber(totalWater);
+  const normalizedRatio = normalizeRatio(ratio);
+
+  return parsedWater > 0 ? roundToOneDecimal(parsedWater / normalizedRatio) : 0;
+};
+
 const normalizeRatio = (value) => {
   const parsed = parseNumber(value, DEFAULT_RATIO);
 
@@ -66,10 +80,14 @@ const formatRatio = (ratio) => {
 };
 
 const buildLogFromFields = (fields) => {
-  const normalizedCoffee = Math.round(parseNumber(fields.coffeeGrams, 20) * 10) / 10;
   const normalizedWater = Math.max(1, Math.round(parseNumber(fields.totalWater, 300)));
   const normalizedTemperature = Math.max(1, Math.round(parseNumber(fields.temperature, 92)));
   const normalizedRatio = normalizeRatio(fields.ratio);
+  const normalizedCoffee = normalizeCoffeeGrams(
+    fields.coffeeGrams,
+    normalizedWater,
+    normalizedRatio,
+  );
   const normalizedGrindSize = normalizeGrindSize(fields.grindSize);
   const normalizedBalance = ['acidity', 'balanced', 'sweet'].includes(fields.balance)
     ? fields.balance
@@ -102,7 +120,7 @@ const buildLogFromFields = (fields) => {
 
 const createNewDraft = () => {
   return {
-    ...buildLogFromFields({}),
+    ...buildLogFromFields({ grindSize: DEFAULT_GRIND_SIZE }),
     isNew: true,
   };
 };
@@ -446,69 +464,82 @@ export function HistoryScreen({ onBack }) {
       ) : (
         <div className="history-list compact-history-list modern-history-list">
           {logs.map((log) => (
-            <div key={log.id} className="history-entry-card history-entry-card-modern">
-              <div className="history-entry-top history-entry-top-modern">
-                <div className="history-entry-title-block history-entry-title-block-modern">
-                  <strong>{log.coffeeName || 'Untitled Coffee'}</strong>
-                  <div className="history-entry-meta">
-                    <span className="section-note">{formatDate(log.date)}</span>
-                    <span className="history-meta-divider" aria-hidden="true">•</span>
-                    <span className="history-balance-text">{balanceLabels[log.balance]}</span>
-                    <span className="history-meta-divider" aria-hidden="true">•</span>
-                    <span className="history-stage-text">{log.strengthPoursCount} pours</span>
+            (() => {
+              const coffeeGrams = normalizeCoffeeGrams(log.coffeeGrams, log.totalWater, log.ratio);
+
+              return (
+                <div key={log.id} className="history-entry-card history-entry-card-modern">
+                  <div className="history-entry-top history-entry-top-modern">
+                    <div className="history-entry-title-block history-entry-title-block-modern">
+                      <strong>{log.coffeeName || 'Untitled Coffee'}</strong>
+                      <div className="history-entry-meta">
+                        <span className="section-note">{formatDate(log.date)}</span>
+                      </div>
+                    </div>
+
+                    <div className="history-entry-actions history-entry-actions-modern">
+                      <button className="btn-secondary btn-inline history-action-btn history-action-btn-modern" onClick={() => handleEdit(log)}>
+                        Edit
+                      </button>
+                      <button
+                        className="btn-secondary btn-inline history-action-btn history-action-btn-modern history-delete-btn"
+                        onClick={() => handleDelete(log)}
+                        disabled={busyLogId === log.id}
+                      >
+                        {busyLogId === log.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="history-entry-actions history-entry-actions-modern">
-                  <button className="btn-secondary btn-inline history-action-btn history-action-btn-modern" onClick={() => handleEdit(log)}>
-                    Edit
-                  </button>
-                  <button
-                    className="btn-secondary btn-inline history-action-btn history-action-btn-modern history-delete-btn"
-                    onClick={() => handleDelete(log)}
-                    disabled={busyLogId === log.id}
-                  >
-                    {busyLogId === log.id ? 'Deleting...' : 'Delete'}
-                  </button>
-                </div>
-              </div>
+                  <div className="history-method-strip">
+                    <div className={`history-method-chip balance-${log.balance}`}>
+                      <span className="detail-label">Flavor</span>
+                      <strong>{balanceLabels[log.balance]}</strong>
+                    </div>
+                    <div className="history-method-chip">
+                      <span className="detail-label">Stage 2</span>
+                      <strong>{log.strengthPoursCount} pours</strong>
+                    </div>
+                    <div className="history-method-chip">
+                      <span className="detail-label">Grind</span>
+                      <strong>{log.grindSize === '' ? '--' : log.grindSize}</strong>
+                    </div>
+                  </div>
 
-              <div className="history-stats-strip">
-                <div className="history-metric history-metric-modern">
-                  <span className="detail-label">Coffee</span>
-                  <strong>{log.coffeeGrams}g</strong>
-                </div>
-                <div className="history-metric history-metric-modern">
-                  <span className="detail-label">Water</span>
-                  <strong>{log.totalWater}ml</strong>
-                </div>
-                <div className="history-metric history-metric-modern">
-                  <span className="detail-label">Temp</span>
-                  <strong>{log.temperature}°C</strong>
-                </div>
-                <div className="history-metric history-metric-modern">
-                  <span className="detail-label">Ratio</span>
-                  <strong>1:{formatRatio(log.ratio)}</strong>
-                </div>
-                <div className="history-metric history-metric-modern">
-                  <span className="detail-label">Grind</span>
-                  <strong>{log.grindSize === '' ? '--' : log.grindSize}</strong>
-                </div>
-                <div className="history-metric history-metric-modern">
-                  <span className="detail-label">Time</span>
-                  <strong>
-                    ~{Math.floor(log.totalTime / 60)}:{String(log.totalTime % 60).padStart(2, '0')}
-                  </strong>
-                </div>
-              </div>
+                  <div className="history-stats-strip">
+                    <div className="history-metric history-metric-modern">
+                      <span className="detail-label">Coffee</span>
+                      <strong>{coffeeGrams}g</strong>
+                    </div>
+                    <div className="history-metric history-metric-modern">
+                      <span className="detail-label">Water</span>
+                      <strong>{log.totalWater}ml</strong>
+                    </div>
+                    <div className="history-metric history-metric-modern">
+                      <span className="detail-label">Temp</span>
+                      <strong>{log.temperature}°C</strong>
+                    </div>
+                    <div className="history-metric history-metric-modern">
+                      <span className="detail-label">Ratio</span>
+                      <strong>1:{formatRatio(log.ratio)}</strong>
+                    </div>
+                    <div className="history-metric history-metric-modern">
+                      <span className="detail-label">Time</span>
+                      <strong>
+                        ~{Math.floor(log.totalTime / 60)}:{String(log.totalTime % 60).padStart(2, '0')}
+                      </strong>
+                    </div>
+                  </div>
 
-              {log.notes && (
-                <div className="history-note-card history-note-card-modern">
-                  <span className="detail-label">Observation</span>
-                  <p className="history-note-copy">{log.notes}</p>
+                  {log.notes && (
+                    <div className="history-note-card history-note-card-modern">
+                      <span className="detail-label">Observation</span>
+                      <p className="history-note-copy">{log.notes}</p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()
           ))}
         </div>
       )}

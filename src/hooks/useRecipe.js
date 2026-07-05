@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { calculateRecipe } from '../utils/calculator';
 
 const DEFAULT_RATIO = 15;
+const DEFAULT_GRIND_SIZE = 120;
 const MIN_RATIO = 10;
 const MAX_RATIO = 20;
 
@@ -39,7 +40,7 @@ export function useRecipe() {
     const [waterAmount, setWaterAmount] = useState(300);
     const [temperature, setTemperature] = useState(92);
     const [ratio, setRatioState] = useState(DEFAULT_RATIO);
-    const [grindSize, setGrindSize] = useState('');
+    const [grindSize, setGrindSize] = useState(DEFAULT_GRIND_SIZE);
     const [balance, setBalance] = useState('balanced'); // 'sweet', 'balanced', 'acidity'
     const [strengthPours, setStrengthPours] = useState(2); // Default 2 pours
 
