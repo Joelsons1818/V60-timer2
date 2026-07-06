@@ -14,7 +14,8 @@ const balanceLabels = {
 };
 
 const DEFAULT_RATIO = 15;
-const DEFAULT_GRIND_SIZE = 120;
+const DEFAULT_GRIND_SIZE = 130;
+const DEFAULT_STRENGTH_POURS = 3;
 const MIN_RATIO = 10;
 const MAX_RATIO = 20;
 
@@ -92,7 +93,7 @@ const buildLogFromFields = (fields) => {
   const normalizedBalance = ['acidity', 'balanced', 'sweet'].includes(fields.balance)
     ? fields.balance
     : 'balanced';
-  const normalizedStrengthPours = Math.max(2, Math.min(5, Math.round(parseNumber(fields.strengthPoursCount, 2))));
+  const normalizedStrengthPours = Math.max(2, Math.min(5, Math.round(parseNumber(fields.strengthPoursCount, DEFAULT_STRENGTH_POURS))));
   const recipe = calculateRecipe(
     normalizedCoffee,
     normalizedWater,
@@ -120,7 +121,10 @@ const buildLogFromFields = (fields) => {
 
 const createNewDraft = () => {
   return {
-    ...buildLogFromFields({ grindSize: DEFAULT_GRIND_SIZE }),
+    ...buildLogFromFields({
+      grindSize: DEFAULT_GRIND_SIZE,
+      strengthPoursCount: DEFAULT_STRENGTH_POURS,
+    }),
     isNew: true,
   };
 };

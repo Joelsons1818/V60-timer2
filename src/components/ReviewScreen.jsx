@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { getLastCoffeeName } from '../utils/preferences';
 
 const balanceLabels = {
   acidity: 'Acidity',
@@ -22,7 +23,7 @@ export function ReviewScreen({
   user,
 }) {
   const canSave = isLocalMode || Boolean(user);
-  const [coffeeName, setCoffeeName] = useState('');
+  const [coffeeName, setCoffeeName] = useState(() => getLastCoffeeName());
   const [notes, setNotes] = useState('');
   const displayedRatio = formatRatio(recipe.ratio);
   const displayedGrind = recipe.grindSize === '' ? '--' : recipe.grindSize;

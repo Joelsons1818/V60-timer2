@@ -1,10 +1,22 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { calculateRecipe } from '../utils/calculator';
+import {
+    getSavedRecipeSettings,
+    resetRecipeSettings as resetSavedRecipeSettings,
+    saveRecipeSettings,
+} from '../utils/preferences';
 
 const DEFAULT_RATIO = 15;
-const DEFAULT_GRIND_SIZE = 120;
 const MIN_RATIO = 10;
 const MAX_RATIO = 20;
+const MIN_WATER = 150;
+const MAX_WATER = 1500;
+const MIN_TEMPERATURE = 75;
+const MAX_TEMPERATURE = 100;
+const MIN_GRIND_SIZE = 0;
+const MAX_GRIND_SIZE = 200;
+const MIN_STRENGTH_POURS = 2;
+const MAX_STRENGTH_POURS = 5;
 
 const roundToOneDecimal = (value) => {
     return Math.round(value * 10) / 10;
@@ -35,14 +47,69 @@ const normalizeGrindSize = (value) => {
     return clamp(Math.round(parsed), 0, 200);
 };
 
+const canPersistRecipeSettings = ({
+    waterAmount,
+    temperature,
+    ratio,
+    grindSize,
+    strengthPours,
+}) => {
+    const parsedWater = Number(waterAmount);
+    const parsedTemperature = Number(temperature);
+    const parsedRatio = Number(ratio);
+    const parsedGrindSize = Number(grindSize);
+    const parsedStrengthPours = Number(strengthPours);
+
+    return (
+        Number.isFinite(parsedWater)
+        && parsedWater >= MIN_WATER
+        && parsedWater <= MAX_WATER
+        && Number.isFinite(parsedTemperature)
+        && parsedTemperature >= MIN_TEMPERATURE
+        && parsedTemperature <= MAX_TEMPERATURE
+        && Number.isFinite(parsedRatio)
+        && parsedRatio >= MIN_RATIO
+        && parsedRatio <= MAX_RATIO
+        && Number.isFinite(parsedGrindSize)
+        && parsedGrindSize >= MIN_GRIND_SIZE
+        && parsedGrindSize <= MAX_GRIND_SIZE
+        && Number.isFinite(parsedStrengthPours)
+        && parsedStrengthPours >= MIN_STRENGTH_POURS
+        && parsedStrengthPours <= MAX_STRENGTH_POURS
+    );
+};
+
 export function useRecipe() {
-    const [coffeeGrams, setCoffeeGrams] = useState(20);
-    const [waterAmount, setWaterAmount] = useState(300);
-    const [temperature, setTemperature] = useState(92);
-    const [ratio, setRatioState] = useState(DEFAULT_RATIO);
-    const [grindSize, setGrindSize] = useState(DEFAULT_GRIND_SIZE);
+    const [initialSettings] = useState(() => getSavedRecipeSettings());
+    const [coffeeGrams, setCoffeeGrams] = useState(() => roundToOneDecimal(initialSettings.totalWater / initialSettings.ratio));
+    const [waterAmount, setWaterAmount] = useState(initialSettings.totalWater);
+    const [temperature, setTemperature] = useState(initialSettings.temperature);
+    const [ratio, setRatioState] = useState(initialSettings.ratio);
+    const [grindSize, setGrindSize] = useState(initialSettings.grindSize);
     const [balance, setBalance] = useState('balanced'); // 'sweet', 'balanced', 'acidity'
-    const [strengthPours, setStrengthPours] = useState(2); // Default 2 pours
+    const [strengthPours, setStrengthPours] = useState(initialSettings.strengthPours); // Default 3 pours
+
+    useEffect(() => {
+        const settings = {
+            waterAmount,
+            temperature,
+            ratio,
+            grindSize,
+            strengthPours,
+        };
+
+        if (!canPersistRecipeSettings(settings)) {
+            return;
+        }
+
+        saveRecipeSettings({
+            totalWater: waterAmount,
+            temperature,
+            ratio,
+            grindSize,
+            strengthPours,
+        });
+    }, [waterAmount, temperature, ratio, grindSize, strengthPours]);
 
     // Sync Water when Coffee changes
     const updateCoffee = (grams) => {
@@ -75,6 +142,17 @@ export function useRecipe() {
         setCoffeeGrams(waterAmount === '' ? '' : roundToOneDecimal(waterAmount / nextRatio));
     };
 
+    const resetRecipeSettings = () => {
+        const originalSettings = resetSavedRecipeSettings();
+
+        setRatioState(originalSettings.ratio);
+        setWaterAmount(originalSettings.totalWater);
+        setCoffeeGrams(roundToOneDecimal(originalSettings.totalWater / originalSettings.ratio));
+        setTemperature(originalSettings.temperature);
+        setGrindSize(originalSettings.grindSize);
+        setStrengthPours(originalSettings.strengthPours);
+    };
+
     const recipe = useMemo(() => {
         return {
             ...calculateRecipe(coffeeGrams, waterAmount, balance, strengthPours, ratio),
@@ -98,6 +176,7 @@ export function useRecipe() {
         setBalance,
         strengthPours,
         setStrengthPours,
+        resetRecipeSettings,
         recipe
     };
 }

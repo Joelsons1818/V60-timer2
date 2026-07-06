@@ -425,6 +425,12 @@ body {
   background: rgba(255, 255, 255, 0.09);
 }
 
+.btn-ghost-small {
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+}
+
 .btn-inline {
   width: auto;
   margin-top: 0;

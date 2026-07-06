@@ -28,6 +28,7 @@ export function ConfigScreen({
   onHistory,
   onOpenAuth,
   onLogout,
+  onResetDefaults,
   user,
 }) {
   const isCheckingAuth = authMode === 'loading';
@@ -36,9 +37,14 @@ export function ConfigScreen({
   return (
     <div className="card">
       <div className="top-action-row top-action-row-wrap">
-        <button className="btn-ghost" onClick={onHistory}>
-          History
-        </button>
+        <div className="top-action-row top-action-row-tight">
+          <button className="btn-ghost" onClick={onHistory}>
+            History
+          </button>
+          <button className="btn-ghost btn-ghost-small" onClick={onResetDefaults}>
+            Reset
+          </button>
+        </div>
 
         <div className="top-action-row top-action-row-tight">
           {user && (

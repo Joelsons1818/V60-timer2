@@ -13,6 +13,7 @@ import {
   logoutSession,
 } from './utils/auth';
 import { buildBrewLog, persistBrewLog } from './utils/storage';
+import { saveLastCoffeeName } from './utils/preferences';
 import audioController from './utils/audioController';
 
 const cloneRecipe = (recipe) => {
@@ -40,6 +41,7 @@ function App() {
     setBalance,
     strengthPours,
     setStrengthPours,
+    resetRecipeSettings,
     recipe,
   } = useRecipe();
 
@@ -152,6 +154,7 @@ function App() {
     try {
       setStorageError('');
       await persistBrewLog(buildBrewLog(activeRecipe, details));
+      saveLastCoffeeName(details.coffeeName);
       setActiveRecipe(null);
       setScreen('config');
     } catch (error) {
@@ -170,6 +173,7 @@ function App() {
           onHistory={handleHistory}
           onLogout={handleLogout}
           onOpenAuth={() => handleOpenAuth('config')}
+          onResetDefaults={resetRecipeSettings}
           onStart={handleStart}
           recipe={recipe}
           setBalance={setBalance}

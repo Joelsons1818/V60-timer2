@@ -12,7 +12,7 @@ export function calculateRecipe(
   coffeeGrams,
   totalWaterInput,
   balance = 'balanced',
-  strengthPoursCount = 2,
+  strengthPoursCount = 3,
   ratioInput = 15,
 ) {
   const ratio = Math.max(10, Math.min(20, Number(ratioInput) || 15));
@@ -48,8 +48,8 @@ export function calculateRecipe(
   const phase2Total = totalWater - phase1Total;
   const phase2TimeAvailable = 120;
 
-  // Ensure strengthPoursCount is valid (default 2 if weird input)
-  const numPours = Math.max(2, Math.min(5, Number(strengthPoursCount) || 2));
+  // Ensure strengthPoursCount is valid (default 3 if weird input)
+  const numPours = Math.max(2, Math.min(5, Number(strengthPoursCount) || 3));
   const timePerPour = phase2TimeAvailable / numPours;
 
   // Generate Steps
