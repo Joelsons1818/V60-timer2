@@ -36,8 +36,8 @@ export function ConfigScreen({
 
   return (
     <div className="card">
-      <div className="top-action-row top-action-row-wrap">
-        <div className="top-action-row top-action-row-tight">
+      <div className="top-action-row top-action-row-wrap config-top-actions">
+        <div className="top-action-row top-action-row-tight config-top-actions-left">
           <button className="btn-ghost" onClick={onHistory}>
             History
           </button>
@@ -46,9 +46,9 @@ export function ConfigScreen({
           </button>
         </div>
 
-        <div className="top-action-row top-action-row-tight">
+        <div className="top-action-row top-action-row-tight config-top-actions-account">
           {user && (
-            <span className="status-pill status-pill-email" title={user.email}>
+            <span className="status-pill status-pill-email config-top-email" title={user.email}>
               {user.email}
             </span>
           )}

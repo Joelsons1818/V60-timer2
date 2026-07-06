@@ -76,6 +76,31 @@ body {
   flex-wrap: wrap;
 }
 
+.config-top-actions {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.config-top-actions-left,
+.config-top-actions-account {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.config-top-actions-left {
+  flex: 0 0 auto;
+}
+
+.config-top-actions-account {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.status-pill-email.config-top-email {
+  min-width: 0;
+}
+
 .status-pill,
 .mode-banner {
   display: inline-flex;
@@ -1166,6 +1191,50 @@ body {
 
   .top-action-row-wrap {
     align-items: stretch;
+  }
+
+  .config-top-actions {
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .config-top-actions-left,
+  .config-top-actions-account {
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .config-top-actions-account {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .config-top-actions .btn-ghost {
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 0.78rem;
+  }
+
+  .config-top-actions .btn-ghost-small {
+    padding-inline: 9px;
+    font-size: 0.76rem;
+  }
+
+  .status-pill-email.config-top-email {
+    flex: 1 1 auto;
+    max-width: none;
+    min-height: 34px;
+    min-width: 0;
+    padding: 7px 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.74rem;
   }
 
   .status-pill-email,
