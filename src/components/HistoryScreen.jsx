@@ -551,13 +551,16 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
                         Use
                       </button>
                       <button
+                        className="btn-secondary btn-inline history-action-btn history-action-btn-modern history-edit-btn"
+                        onClick={() => handleEdit(log)}
+                      >
+                        Edit
+                      </button>
+                      <button
                         className="btn-secondary btn-inline history-action-btn history-action-btn-modern"
                         onClick={() => handleDuplicate(log)}
                       >
                         Duplicate
-                      </button>
-                      <button className="btn-secondary btn-inline history-action-btn history-action-btn-modern" onClick={() => handleEdit(log)}>
-                        Edit
                       </button>
                       <button
                         className="btn-secondary btn-inline history-action-btn history-action-btn-modern history-delete-btn"
