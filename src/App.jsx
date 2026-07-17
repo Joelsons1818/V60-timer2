@@ -41,6 +41,7 @@ function App() {
     setBalance,
     strengthPours,
     setStrengthPours,
+    applyRecipeSettings,
     resetRecipeSettings,
     recipe,
   } = useRecipe();
@@ -146,6 +147,13 @@ function App() {
     handleOpenAuth('history');
   };
 
+  const handleUseHistoryRecipe = (historyRecipe) => {
+    applyRecipeSettings(historyRecipe);
+    setActiveRecipe(null);
+    setStorageError('');
+    setScreen('config');
+  };
+
   const handleSave = async (details) => {
     if (!activeRecipe) {
       return;
@@ -224,6 +232,7 @@ function App() {
       {screen === 'history' && (
         <HistoryScreen
           onBack={handleReset}
+          onUseRecipe={handleUseHistoryRecipe}
         />
       )}
 

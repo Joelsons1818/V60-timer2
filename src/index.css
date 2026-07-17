@@ -679,6 +679,18 @@ body {
   background: rgba(255, 255, 255, 0.035);
 }
 
+.history-use-btn {
+  color: var(--color-accent);
+  border-color: rgba(212, 163, 115, 0.34);
+  background: rgba(212, 163, 115, 0.1);
+}
+
+.history-use-btn:hover {
+  color: var(--color-bg-dark);
+  border-color: var(--color-accent-hover);
+  background: var(--color-accent-hover);
+}
+
 .history-method-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

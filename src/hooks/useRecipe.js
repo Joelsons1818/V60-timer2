@@ -47,6 +47,10 @@ const normalizeGrindSize = (value) => {
     return clamp(Math.round(parsed), 0, 200);
 };
 
+const normalizeBalance = (value) => {
+    return ['sweet', 'balanced', 'acidity'].includes(value) ? value : 'balanced';
+};
+
 const canPersistRecipeSettings = ({
     waterAmount,
     temperature,
@@ -153,6 +157,35 @@ export function useRecipe() {
         setStrengthPours(originalSettings.strengthPours);
     };
 
+    const applyRecipeSettings = (savedRecipe = {}) => {
+        const nextRatio = normalizeRatio(savedRecipe.ratio);
+        const parsedWater = Number(savedRecipe.totalWater);
+        const nextWater = Number.isFinite(parsedWater)
+            ? clamp(Math.round(parsedWater), MIN_WATER, MAX_WATER)
+            : waterAmount;
+        const parsedCoffee = Number(savedRecipe.coffeeGrams);
+        const nextCoffee = Number.isFinite(parsedCoffee) && parsedCoffee > 0
+            ? roundToOneDecimal(parsedCoffee)
+            : roundToOneDecimal(nextWater / nextRatio);
+        const parsedTemperature = Number(savedRecipe.temperature);
+        const nextTemperature = Number.isFinite(parsedTemperature)
+            ? clamp(Math.round(parsedTemperature), MIN_TEMPERATURE, MAX_TEMPERATURE)
+            : temperature;
+        const nextGrindSize = normalizeGrindSize(savedRecipe.grindSize);
+        const parsedStrengthPours = Number(savedRecipe.strengthPoursCount);
+        const nextStrengthPours = Number.isFinite(parsedStrengthPours)
+            ? clamp(Math.round(parsedStrengthPours), MIN_STRENGTH_POURS, MAX_STRENGTH_POURS)
+            : strengthPours;
+
+        setCoffeeGrams(nextCoffee);
+        setWaterAmount(nextWater);
+        setTemperature(nextTemperature);
+        setRatioState(nextRatio);
+        setGrindSize(nextGrindSize);
+        setBalance(normalizeBalance(savedRecipe.balance));
+        setStrengthPours(nextStrengthPours);
+    };
+
     const recipe = useMemo(() => {
         return {
             ...calculateRecipe(coffeeGrams, waterAmount, balance, strengthPours, ratio),
@@ -176,6 +209,7 @@ export function useRecipe() {
         setBalance,
         strengthPours,
         setStrengthPours,
+        applyRecipeSettings,
         resetRecipeSettings,
         recipe
     };

@@ -136,7 +136,7 @@ const createDraft = (log) => {
   };
 };
 
-export function HistoryScreen({ onBack }) {
+export function HistoryScreen({ onBack, onUseRecipe }) {
   const [logs, setLogs] = useState([]);
   const [draft, setDraft] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -482,6 +482,12 @@ export function HistoryScreen({ onBack }) {
                     </div>
 
                     <div className="history-entry-actions history-entry-actions-modern">
+                      <button
+                        className="btn-secondary btn-inline history-action-btn history-action-btn-modern history-use-btn"
+                        onClick={() => onUseRecipe(log)}
+                      >
+                        Use
+                      </button>
                       <button className="btn-secondary btn-inline history-action-btn history-action-btn-modern" onClick={() => handleEdit(log)}>
                         Edit
                       </button>
