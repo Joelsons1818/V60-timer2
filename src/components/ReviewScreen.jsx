@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { TastingControls } from './TastingControls';
 import { getLastCoffeeName } from '../utils/preferences';
 
 const balanceLabels = {
@@ -25,6 +26,8 @@ export function ReviewScreen({
   const canSave = isLocalMode || Boolean(user);
   const [coffeeName, setCoffeeName] = useState(() => getLastCoffeeName());
   const [notes, setNotes] = useState('');
+  const [rating, setRating] = useState(0);
+  const [tastingTags, setTastingTags] = useState([]);
   const displayedRatio = formatRatio(recipe.ratio);
   const displayedGrind = recipe.grindSize === '' ? '--' : recipe.grindSize;
 
@@ -32,7 +35,17 @@ export function ReviewScreen({
     onSave({
       coffeeName,
       notes,
+      rating,
+      tastingTags,
     });
+  };
+
+  const handleToggleTag = (tag) => {
+    setTastingTags((currentTags) => (
+      currentTags.includes(tag)
+        ? currentTags.filter((currentTag) => currentTag !== tag)
+        : [...currentTags, tag]
+    ));
   };
 
   return (
@@ -115,6 +128,13 @@ export function ReviewScreen({
           onChange={(event) => setNotes(event.target.value)}
         />
       </div>
+
+      <TastingControls
+        onRatingChange={setRating}
+        onToggleTag={handleToggleTag}
+        rating={rating}
+        tastingTags={tastingTags}
+      />
 
       {!canSave && (
         <div className="auth-panel">

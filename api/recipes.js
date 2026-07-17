@@ -15,6 +15,8 @@ const REQUIRED_FIELDS = [
   'steps',
 ];
 
+const ALLOWED_TASTING_TAGS = new Set(['sweet', 'acidic', 'bitter', 'weak', 'strong']);
+
 const validateRecipe = (recipe) => {
   if (!recipe || typeof recipe !== 'object') {
     return 'Recipe payload is required.';
@@ -42,6 +44,24 @@ const validateRecipe = (recipe) => {
     if (!Number.isFinite(grindSize) || grindSize < 0 || grindSize > 200) {
       return 'Grind size must be between 0 and 200.';
     }
+  }
+
+  if (recipe.rating !== undefined) {
+    const rating = Number(recipe.rating);
+
+    if (!Number.isInteger(rating) || rating < 0 || rating > 5) {
+      return 'Rating must be a whole number between 0 and 5.';
+    }
+  }
+
+  if (
+    recipe.tastingTags !== undefined
+    && (
+      !Array.isArray(recipe.tastingTags)
+      || recipe.tastingTags.some((tag) => !ALLOWED_TASTING_TAGS.has(tag))
+    )
+  ) {
+    return 'Cup profile contains an invalid option.';
   }
 
   return null;

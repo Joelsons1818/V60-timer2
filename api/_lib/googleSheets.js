@@ -19,6 +19,8 @@ const RECIPE_COLUMNS = [
   'stepsJson',
   'updatedAt',
   'grindSize',
+  'rating',
+  'tastingTagsJson',
 ];
 
 let accessTokenCache = {
@@ -304,6 +306,30 @@ const parseSteps = (value) => {
   }
 };
 
+const normalizeRating = (value) => {
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed)
+    ? Math.max(0, Math.min(5, Math.round(parsed)))
+    : 0;
+};
+
+const normalizeTastingTags = (tags) => {
+  const allowedTags = new Set(['sweet', 'acidic', 'bitter', 'weak', 'strong']);
+
+  return Array.isArray(tags)
+    ? [...new Set(tags.filter((tag) => allowedTags.has(tag)))]
+    : [];
+};
+
+const parseTastingTags = (value) => {
+  try {
+    return normalizeTastingTags(JSON.parse(value || '[]'));
+  } catch {
+    return [];
+  }
+};
+
 const serializeRecipe = (recipe) => {
   const updatedAt = new Date().toISOString();
 
@@ -322,6 +348,8 @@ const serializeRecipe = (recipe) => {
     JSON.stringify(recipe.steps ?? []),
     updatedAt,
     recipe.grindSize ?? '',
+    normalizeRating(recipe.rating),
+    JSON.stringify(normalizeTastingTags(recipe.tastingTags)),
   ];
 };
 
@@ -341,6 +369,8 @@ const toRecipe = (row) => {
     stepsJson = '[]',
     updatedAt = '',
     grindSize = '',
+    rating = 0,
+    tastingTagsJson = '[]',
   ] = row;
 
   return {
@@ -358,6 +388,8 @@ const toRecipe = (row) => {
     steps: parseSteps(String(stepsJson)),
     updatedAt: String(updatedAt),
     grindSize: grindSize === '' ? '' : parseNumber(grindSize),
+    rating: normalizeRating(rating),
+    tastingTags: parseTastingTags(String(tastingTagsJson)),
   };
 };
 

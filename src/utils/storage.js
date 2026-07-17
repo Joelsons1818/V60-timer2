@@ -1,3 +1,5 @@
+import { normalizeRating, normalizeTastingTags } from './tasting';
+
 const STORAGE_KEY = 'v60_brew_logs';
 const API_ENDPOINT = '/api/recipes';
 const isDevelopment = import.meta.env.DEV;
@@ -54,6 +56,8 @@ export function buildBrewLog(recipe, details = {}) {
     date: new Date().toISOString(),
     coffeeName: details.coffeeName?.trim() || '',
     notes: details.notes?.trim() || '',
+    rating: normalizeRating(details.rating),
+    tastingTags: normalizeTastingTags(details.tastingTags),
     coffeeGrams: normalizeCoffeeGrams(recipe),
     totalWater: recipe.totalWater,
     temperature: recipe.temperature,

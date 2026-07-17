@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
 import { calculateRecipe } from '../utils/calculator';
+import { TastingControls } from './TastingControls';
+import {
+  getTastingTagLabel,
+  normalizeRating,
+  normalizeTastingTags,
+} from '../utils/tasting';
 import {
   loadBrewLogs,
   persistBrewLog,
@@ -107,6 +113,8 @@ const buildLogFromFields = (fields) => {
     date: fields.date || new Date().toISOString(),
     coffeeName: fields.coffeeName?.trim() || '',
     notes: fields.notes?.trim() || '',
+    rating: normalizeRating(fields.rating),
+    tastingTags: normalizeTastingTags(fields.tastingTags),
     coffeeGrams: recipe.coffeeGrams,
     totalWater: recipe.totalWater,
     temperature: normalizedTemperature,
@@ -126,6 +134,7 @@ const createNewDraft = () => {
       strengthPoursCount: DEFAULT_STRENGTH_POURS,
     }),
     isNew: true,
+    isDuplicate: false,
   };
 };
 
@@ -133,6 +142,25 @@ const createDraft = (log) => {
   return {
     ...buildLogFromFields(log),
     isNew: false,
+    isDuplicate: false,
+  };
+};
+
+const createDuplicateDraft = (log) => {
+  const coffeeName = log.coffeeName?.trim();
+
+  return {
+    ...buildLogFromFields({
+      ...log,
+      id: '',
+      date: new Date().toISOString(),
+      coffeeName: coffeeName ? `${coffeeName} Copy` : 'Untitled Coffee Copy',
+      notes: '',
+      rating: 0,
+      tastingTags: [],
+    }),
+    isNew: true,
+    isDuplicate: true,
   };
 };
 
@@ -223,6 +251,31 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
     });
   };
 
+  const handleDuplicate = (log) => {
+    setDraft(createDuplicateDraft(log));
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
+
+  const handleToggleDraftTag = (tag) => {
+    setDraft((currentDraft) => {
+      if (!currentDraft) {
+        return currentDraft;
+      }
+
+      const currentTags = normalizeTastingTags(currentDraft.tastingTags);
+
+      return {
+        ...currentDraft,
+        tastingTags: currentTags.includes(tag)
+          ? currentTags.filter((currentTag) => currentTag !== tag)
+          : [...currentTags, tag],
+      };
+    });
+  };
+
   const handleSave = async () => {
     if (!draft) {
       return;
@@ -296,7 +349,7 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
         <div className="history-editor-card">
           <div className="section-row">
             <h3 className="mini-title">
-              {draft.isNew ? 'New Recipe' : 'Edit Recipe'}
+              {draft.isDuplicate ? 'Duplicate Recipe' : draft.isNew ? 'New Recipe' : 'Edit Recipe'}
             </h3>
             <span className="section-note">{formatDate(draft.date)}</span>
           </div>
@@ -441,9 +494,16 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
             </div>
           </div>
 
+          <TastingControls
+            onRatingChange={(rating) => handleFieldChange('rating', rating)}
+            onToggleTag={handleToggleDraftTag}
+            rating={normalizeRating(draft.rating)}
+            tastingTags={normalizeTastingTags(draft.tastingTags)}
+          />
+
           <div className="button-row">
             <button className="btn-primary" onClick={handleSave}>
-              {draft.isNew ? 'Save Recipe' : 'Save Changes'}
+              {draft.isDuplicate ? 'Save Copy' : draft.isNew ? 'Save Recipe' : 'Save Changes'}
             </button>
             <button className="btn-secondary" onClick={() => setDraft(null)}>
               Cancel
@@ -470,6 +530,8 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
           {logs.map((log) => (
             (() => {
               const coffeeGrams = normalizeCoffeeGrams(log.coffeeGrams, log.totalWater, log.ratio);
+              const rating = normalizeRating(log.rating);
+              const tastingTags = normalizeTastingTags(log.tastingTags);
 
               return (
                 <div key={log.id} className="history-entry-card history-entry-card-modern">
@@ -487,6 +549,12 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
                         onClick={() => onUseRecipe(log)}
                       >
                         Use
+                      </button>
+                      <button
+                        className="btn-secondary btn-inline history-action-btn history-action-btn-modern"
+                        onClick={() => handleDuplicate(log)}
+                      >
+                        Duplicate
                       </button>
                       <button className="btn-secondary btn-inline history-action-btn history-action-btn-modern" onClick={() => handleEdit(log)}>
                         Edit
@@ -545,6 +613,36 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
                       </div>
                     </div>
                   </div>
+
+                  {(rating > 0 || tastingTags.length > 0) && (
+                    <div className="history-result-card">
+                      {rating > 0 && (
+                        <div className="history-result-section">
+                          <span className="detail-label">Rating</span>
+                          <strong
+                            className="history-rating-stars"
+                            role="img"
+                            aria-label={`${rating} out of 5 stars`}
+                          >
+                            {'★'.repeat(rating)}
+                            <span>{'★'.repeat(5 - rating)}</span>
+                          </strong>
+                        </div>
+                      )}
+                      {tastingTags.length > 0 && (
+                        <div className="history-result-section history-result-profile">
+                          <span className="detail-label">Cup Profile</span>
+                          <div className="history-tag-list">
+                            {tastingTags.map((tag) => (
+                              <span key={tag} className="history-tag-chip">
+                                {getTastingTagLabel(tag)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {log.notes && (
                     <div className="history-note-card history-note-card-modern">

@@ -312,6 +312,45 @@ body {
   /* Prevent layout jump */
 }
 
+.rating-control {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rating-button {
+  min-height: 46px;
+  border-radius: var(--radius-md);
+  color: rgba(224, 224, 224, 0.32);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 1.25rem;
+  transition: all 0.2s;
+}
+
+.rating-button:hover,
+.rating-button.active {
+  color: var(--color-accent);
+  background: rgba(212, 163, 115, 0.1);
+  border-color: rgba(212, 163, 115, 0.28);
+}
+
+.rating-helper {
+  text-align: right;
+}
+
+.tasting-toggle-group {
+  flex-wrap: wrap;
+  background: transparent;
+  padding: 0;
+}
+
+.tasting-toggle-group button {
+  flex: 1 1 calc(33.333% - 4px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .ratio-control {
   gap: 10px;
 }
@@ -771,6 +810,53 @@ body {
   font-size: 0.92rem;
   line-height: 1.55;
   color: rgba(224, 224, 224, 0.76);
+}
+
+.history-result-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(212, 163, 115, 0.055);
+  border: 1px solid rgba(212, 163, 115, 0.12);
+}
+
+.history-result-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.history-result-profile {
+  flex: 1;
+}
+
+.history-rating-stars {
+  color: var(--color-accent);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.history-rating-stars span {
+  color: rgba(224, 224, 224, 0.2);
+}
+
+.history-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.history-tag-chip {
+  padding: 5px 9px;
+  border-radius: var(--radius-full);
+  color: var(--color-accent);
+  background: rgba(212, 163, 115, 0.1);
+  border: 1px solid rgba(212, 163, 115, 0.16);
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .history-delete-btn {
@@ -1392,6 +1478,14 @@ body {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .history-result-card {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px 11px;
+    border-radius: 12px;
   }
 
   .history-edit-grid {
