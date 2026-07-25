@@ -174,6 +174,7 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible' && keepAwakeRef.current) {
+                audioController.resume();
                 requestScreenWakeLock(wakeLockRef, keepAwakeRef);
                 return;
             }
@@ -267,7 +268,7 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
     };
 
     const handlePrepInteraction = () => {
-        audioController.resume();
+        audioController.resume({ testSound: true });
         requestScreenWakeLock(wakeLockRef, keepAwakeRef);
     };
 
