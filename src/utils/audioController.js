@@ -1,29 +1,36 @@
 const WAV_SAMPLE_RATE = 44100;
 const COUNTDOWN_SOUND = 'countdown';
 const TRANSITION_SOUND = 'transition';
+const FINISH_SOUND = 'finish';
+const AUDIO_SPRITE_DURATION = 2.7;
 
 const SOUND_DEFINITIONS = {
   [COUNTDOWN_SOUND]: {
-    duration: 0.24,
-    frequencies: [
-      { frequency: 880, gain: 0.92 },
-      { frequency: 1760, gain: 0.08 },
+    offset: 0,
+    duration: 0.28,
+    volume: 0.96,
+    notes: [
+      { start: 0, duration: 0.27, frequency: 783.99, gain: 0.92 },
     ],
-    attack: 0.008,
-    release: 0.065,
-    decay: 0.18,
-    volume: 0.94,
   },
   [TRANSITION_SOUND]: {
-    duration: 0.42,
-    frequencies: [
-      { frequency: 1046.5, gain: 0.78 },
-      { frequency: 1568, gain: 0.22 },
+    offset: 0.55,
+    duration: 0.62,
+    volume: 0.92,
+    notes: [
+      { start: 0, duration: 0.36, frequency: 523.25, gain: 0.52 },
+      { start: 0.19, duration: 0.4, frequency: 659.25, gain: 0.58 },
     ],
-    attack: 0.012,
-    release: 0.11,
-    decay: 0.68,
-    volume: 0.88,
+  },
+  [FINISH_SOUND]: {
+    offset: 1.45,
+    duration: 1,
+    volume: 0.9,
+    notes: [
+      { start: 0, duration: 0.44, frequency: 523.25, gain: 0.5 },
+      { start: 0.22, duration: 0.46, frequency: 659.25, gain: 0.52 },
+      { start: 0.44, duration: 0.5, frequency: 783.99, gain: 0.54 },
+    ],
   },
 };
 
@@ -45,9 +52,28 @@ const bytesToBase64 = (bytes) => {
   return btoa(binary);
 };
 
-const createSoundWavDataUrl = (soundName) => {
-  const definition = SOUND_DEFINITIONS[soundName];
-  const sampleCount = Math.round(WAV_SAMPLE_RATE * definition.duration);
+const getNoteSample = (spriteTime, definition, note) => {
+  const noteTime = spriteTime - definition.offset - note.start;
+  if (noteTime < 0 || noteTime >= note.duration) {
+    return 0;
+  }
+
+  const attackDuration = 0.012;
+  const releaseDuration = Math.min(0.14, note.duration * 0.38);
+  const attackProgress = Math.min(1, noteTime / attackDuration);
+  const releaseProgress = Math.min(1, (note.duration - noteTime) / releaseDuration);
+  const attack = Math.sin((Math.PI / 2) * attackProgress);
+  const release = Math.sin((Math.PI / 2) * Math.max(0, releaseProgress));
+  const decay = Math.exp((-1.35 * noteTime) / note.duration);
+  const envelope = attack * release * decay;
+  const fundamental = Math.sin(2 * Math.PI * note.frequency * noteTime);
+  const softOctave = Math.sin(2 * Math.PI * note.frequency * 2 * noteTime);
+
+  return ((fundamental * 0.975) + (softOctave * 0.025)) * envelope * note.gain;
+};
+
+const createAudioSpriteDataUrl = () => {
+  const sampleCount = Math.round(WAV_SAMPLE_RATE * AUDIO_SPRITE_DURATION);
   const bytesPerSample = 2;
   const dataSize = sampleCount * bytesPerSample;
   const buffer = new ArrayBuffer(44 + dataSize);
@@ -69,17 +95,18 @@ const createSoundWavDataUrl = (soundName) => {
 
   for (let index = 0; index < sampleCount; index += 1) {
     const time = index / WAV_SAMPLE_RATE;
-    const attackProgress = Math.min(1, time / definition.attack);
-    const releaseProgress = Math.min(1, (definition.duration - time) / definition.release);
-    const attack = Math.sin((Math.PI / 2) * attackProgress);
-    const release = Math.sin((Math.PI / 2) * Math.max(0, releaseProgress));
-    const decay = Math.exp((-definition.decay * time) / definition.duration);
-    const envelope = attack * release * decay;
-    const waveform = definition.frequencies.reduce((sum, tone) => {
-      return sum + (Math.sin(2 * Math.PI * tone.frequency * time) * tone.gain);
+    const mixedSample = Object.values(SOUND_DEFINITIONS).reduce((total, definition) => {
+      if (time < definition.offset || time >= definition.offset + definition.duration) {
+        return total;
+      }
+
+      const soundSample = definition.notes.reduce((sum, note) => {
+        return sum + getNoteSample(time, definition, note);
+      }, 0);
+
+      return total + (soundSample * definition.volume);
     }, 0);
-    const sample = waveform * envelope * definition.volume;
-    const pcmValue = Math.round(Math.max(-1, Math.min(1, sample)) * 32767);
+    const pcmValue = Math.round(Math.max(-1, Math.min(1, mixedSample)) * 32767);
 
     view.setInt16(44 + (index * bytesPerSample), pcmValue, true);
   }
@@ -91,8 +118,9 @@ class AudioController {
   constructor() {
     this.context = null;
     this.mediaElement = null;
-    this.mediaSources = {};
-    this.currentMediaSound = null;
+    this.mediaSource = null;
+    this.mediaPauseTimeout = null;
+    this.mediaPlaybackToken = 0;
     this.isMediaUnlocked = false;
     this.isUnlocked = false;
   }
@@ -110,27 +138,22 @@ class AudioController {
     return this.context;
   }
 
-  getMediaSource(soundName) {
-    if (!this.mediaSources[soundName]) {
-      this.mediaSources[soundName] = createSoundWavDataUrl(soundName);
-    }
-
-    return this.mediaSources[soundName];
-  }
-
   getMediaElement() {
     if (this.mediaElement || typeof Audio === 'undefined') {
       return this.mediaElement;
+    }
+
+    if (!this.mediaSource) {
+      this.mediaSource = createAudioSpriteDataUrl();
     }
 
     const mediaElement = new Audio();
     mediaElement.preload = 'auto';
     mediaElement.playsInline = true;
     mediaElement.volume = 1;
-    mediaElement.src = this.getMediaSource(COUNTDOWN_SOUND);
+    mediaElement.src = this.mediaSource;
     mediaElement.load();
 
-    this.currentMediaSound = COUNTDOWN_SOUND;
     this.mediaElement = mediaElement;
     return mediaElement;
   }
@@ -155,26 +178,34 @@ class AudioController {
 
   async playMediaSound(soundName = COUNTDOWN_SOUND) {
     const mediaElement = this.getMediaElement();
-    if (!mediaElement) {
+    const definition = SOUND_DEFINITIONS[soundName];
+    if (!mediaElement || !definition) {
       return false;
     }
 
     try {
-      mediaElement.pause();
+      this.mediaPlaybackToken += 1;
+      const playbackToken = this.mediaPlaybackToken;
 
-      if (this.currentMediaSound !== soundName) {
-        mediaElement.src = this.getMediaSource(soundName);
-        mediaElement.load();
-        this.currentMediaSound = soundName;
+      if (this.mediaPauseTimeout) {
+        globalThis.clearTimeout(this.mediaPauseTimeout);
+        this.mediaPauseTimeout = null;
       }
 
-      mediaElement.currentTime = 0;
+      mediaElement.pause();
+      mediaElement.currentTime = definition.offset;
       mediaElement.playbackRate = 1;
 
       const playAttempt = mediaElement.play();
       if (playAttempt && typeof playAttempt.then === 'function') {
         await playAttempt;
       }
+
+      this.mediaPauseTimeout = globalThis.setTimeout(() => {
+        if (this.mediaPlaybackToken === playbackToken) {
+          mediaElement.pause();
+        }
+      }, Math.round(definition.duration * 1000));
 
       this.isMediaUnlocked = true;
       this.isUnlocked = true;
@@ -185,7 +216,13 @@ class AudioController {
     }
   }
 
-  playContextTone(frequency = 880, type = 'sine', duration = 0.24, volume = 0.45) {
+  playContextTone(
+    frequency = 783.99,
+    type = 'sine',
+    duration = 0.28,
+    volume = 0.42,
+    delay = 0,
+  ) {
     try {
       const context = this.getContext();
       if (!context || context.state !== 'running') {
@@ -194,20 +231,20 @@ class AudioController {
 
       const oscillator = context.createOscillator();
       const gain = context.createGain();
-      const now = context.currentTime;
+      const startTime = context.currentTime + delay;
       const audibleDuration = Math.max(0.22, duration);
 
       oscillator.type = type;
-      oscillator.frequency.setValueAtTime(frequency, now);
+      oscillator.frequency.setValueAtTime(frequency, startTime);
 
-      gain.gain.setValueAtTime(volume, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + audibleDuration);
+      gain.gain.setValueAtTime(volume, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + audibleDuration);
 
       oscillator.connect(gain);
       gain.connect(context.destination);
 
-      oscillator.start(now);
-      oscillator.stop(now + audibleDuration);
+      oscillator.start(startTime);
+      oscillator.stop(startTime + audibleDuration);
       this.isUnlocked = true;
       return true;
     } catch (error) {
@@ -217,9 +254,16 @@ class AudioController {
   }
 
   playContextTransitionTone() {
-    const lowerTone = this.playContextTone(1046.5, 'sine', 0.4, 0.28);
-    const upperTone = this.playContextTone(1568, 'sine', 0.4, 0.1);
-    return lowerTone || upperTone;
+    const firstNote = this.playContextTone(523.25, 'sine', 0.34, 0.3);
+    const secondNote = this.playContextTone(659.25, 'sine', 0.38, 0.32, 0.19);
+    return firstNote || secondNote;
+  }
+
+  playContextFinishTone() {
+    const firstNote = this.playContextTone(523.25, 'sine', 0.4, 0.27);
+    const secondNote = this.playContextTone(659.25, 'sine', 0.42, 0.28, 0.22);
+    const thirdNote = this.playContextTone(783.99, 'sine', 0.46, 0.3, 0.44);
+    return firstNote || secondNote || thirdNote;
   }
 
   async resume({ testSound = false } = {}) {
@@ -238,7 +282,7 @@ class AudioController {
     return this.isUnlocked;
   }
 
-  async playTone(frequency = 880, type = 'sine', duration = 0.24) {
+  async playTone(frequency = 783.99, type = 'sine', duration = 0.28) {
     const mediaPlayed = await this.playMediaSound(COUNTDOWN_SOUND);
     if (mediaPlayed) {
       return true;
@@ -266,6 +310,21 @@ class AudioController {
     }
 
     return this.playContextTransitionTone();
+  }
+
+  async playFinishTone() {
+    const mediaPlayed = await this.playMediaSound(FINISH_SOUND);
+    if (mediaPlayed) {
+      return true;
+    }
+
+    const contextReady = await this.resumeContext();
+    if (!contextReady) {
+      this.isUnlocked = false;
+      return false;
+    }
+
+    return this.playContextFinishTone();
   }
 }
 

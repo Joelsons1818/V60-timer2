@@ -70,6 +70,10 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
         audioController.playTransitionTone();
     });
 
+    const playFinishTone = useEffectEvent(() => {
+        audioController.playFinishTone();
+    });
+
     // Prep countdown using pure state transitions so it stays stable in React Strict mode.
     useEffect(() => {
         if (!isPrepping) {
@@ -114,7 +118,7 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
 
                     if (!finishHandledRef.current) {
                         finishHandledRef.current = true;
-                        playTransitionTone();
+                        playFinishTone();
 
                         if (onFinish) {
                             finishTimeoutRef.current = window.setTimeout(() => {
@@ -276,7 +280,7 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
 
             if (!finishHandledRef.current) {
                 finishHandledRef.current = true;
-                audioController.playTransitionTone();
+                audioController.playFinishTone();
 
                 if (onFinish) {
                     finishTimeoutRef.current = window.setTimeout(() => {
