@@ -2,34 +2,31 @@ const WAV_SAMPLE_RATE = 44100;
 const COUNTDOWN_SOUND = 'countdown';
 const TRANSITION_SOUND = 'transition';
 const FINISH_SOUND = 'finish';
-const AUDIO_SPRITE_DURATION = 2.7;
+const AUDIO_SPRITE_DURATION = 2;
 
 const SOUND_DEFINITIONS = {
   [COUNTDOWN_SOUND]: {
     offset: 0,
-    duration: 0.28,
-    volume: 0.96,
+    duration: 0.26,
+    volume: 0.88,
     notes: [
-      { start: 0, duration: 0.27, frequency: 783.99, gain: 0.92 },
+      { start: 0, duration: 0.24, frequency: 523.25, gain: 0.82 },
     ],
   },
   [TRANSITION_SOUND]: {
     offset: 0.55,
-    duration: 0.62,
-    volume: 0.92,
+    duration: 0.32,
+    volume: 0.88,
     notes: [
-      { start: 0, duration: 0.36, frequency: 523.25, gain: 0.52 },
-      { start: 0.19, duration: 0.4, frequency: 659.25, gain: 0.58 },
+      { start: 0, duration: 0.3, frequency: 587.33, gain: 0.82 },
     ],
   },
   [FINISH_SOUND]: {
-    offset: 1.45,
-    duration: 1,
+    offset: 1.1,
+    duration: 0.64,
     volume: 0.9,
     notes: [
-      { start: 0, duration: 0.44, frequency: 523.25, gain: 0.5 },
-      { start: 0.22, duration: 0.46, frequency: 659.25, gain: 0.52 },
-      { start: 0.44, duration: 0.5, frequency: 783.99, gain: 0.54 },
+      { start: 0, duration: 0.62, frequency: 392, gain: 0.82 },
     ],
   },
 };
@@ -58,18 +55,17 @@ const getNoteSample = (spriteTime, definition, note) => {
     return 0;
   }
 
-  const attackDuration = 0.012;
-  const releaseDuration = Math.min(0.14, note.duration * 0.38);
+  const attackDuration = Math.min(0.025, note.duration * 0.12);
+  const releaseDuration = Math.min(0.2, note.duration * 0.55);
   const attackProgress = Math.min(1, noteTime / attackDuration);
   const releaseProgress = Math.min(1, (note.duration - noteTime) / releaseDuration);
   const attack = Math.sin((Math.PI / 2) * attackProgress);
   const release = Math.sin((Math.PI / 2) * Math.max(0, releaseProgress));
-  const decay = Math.exp((-1.35 * noteTime) / note.duration);
+  const decay = Math.exp((-0.5 * noteTime) / note.duration);
   const envelope = attack * release * decay;
   const fundamental = Math.sin(2 * Math.PI * note.frequency * noteTime);
-  const softOctave = Math.sin(2 * Math.PI * note.frequency * 2 * noteTime);
 
-  return ((fundamental * 0.975) + (softOctave * 0.025)) * envelope * note.gain;
+  return fundamental * envelope * note.gain;
 };
 
 const createAudioSpriteDataUrl = () => {
@@ -217,10 +213,10 @@ class AudioController {
   }
 
   playContextTone(
-    frequency = 783.99,
+    frequency = 523.25,
     type = 'sine',
-    duration = 0.28,
-    volume = 0.42,
+    duration = 0.24,
+    volume = 0.36,
     delay = 0,
   ) {
     try {
@@ -233,11 +229,13 @@ class AudioController {
       const gain = context.createGain();
       const startTime = context.currentTime + delay;
       const audibleDuration = Math.max(0.22, duration);
+      const attackDuration = Math.min(0.025, audibleDuration * 0.12);
 
       oscillator.type = type;
       oscillator.frequency.setValueAtTime(frequency, startTime);
 
-      gain.gain.setValueAtTime(volume, startTime);
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.exponentialRampToValueAtTime(volume, startTime + attackDuration);
       gain.gain.exponentialRampToValueAtTime(0.001, startTime + audibleDuration);
 
       oscillator.connect(gain);
@@ -254,16 +252,11 @@ class AudioController {
   }
 
   playContextTransitionTone() {
-    const firstNote = this.playContextTone(523.25, 'sine', 0.34, 0.3);
-    const secondNote = this.playContextTone(659.25, 'sine', 0.38, 0.32, 0.19);
-    return firstNote || secondNote;
+    return this.playContextTone(587.33, 'sine', 0.3, 0.36);
   }
 
   playContextFinishTone() {
-    const firstNote = this.playContextTone(523.25, 'sine', 0.4, 0.27);
-    const secondNote = this.playContextTone(659.25, 'sine', 0.42, 0.28, 0.22);
-    const thirdNote = this.playContextTone(783.99, 'sine', 0.46, 0.3, 0.44);
-    return firstNote || secondNote || thirdNote;
+    return this.playContextTone(392, 'sine', 0.62, 0.38);
   }
 
   async resume({ testSound = false } = {}) {
@@ -282,7 +275,7 @@ class AudioController {
     return this.isUnlocked;
   }
 
-  async playTone(frequency = 783.99, type = 'sine', duration = 0.28) {
+  async playTone() {
     const mediaPlayed = await this.playMediaSound(COUNTDOWN_SOUND);
     if (mediaPlayed) {
       return true;
@@ -294,7 +287,7 @@ class AudioController {
       return false;
     }
 
-    return this.playContextTone(frequency, type, duration);
+    return this.playContextTone();
   }
 
   async playTransitionTone() {
