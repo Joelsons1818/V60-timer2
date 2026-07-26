@@ -54,7 +54,6 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
     const [isPrepping, setIsPrepping] = useState(true);
 
     const lastPlayedRef = useRef(-1);
-    const previousStepIndexRef = useRef(-1);
     const startTimeRef = useRef(null); // Reference for precise timing
     const finishHandledRef = useRef(false);
     const finishTimeoutRef = useRef(null);
@@ -64,14 +63,6 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
     // Sound Function using Persistent Context
     const playTone = useEffectEvent((freq = 800, type = 'sine', duration = 0.1) => {
         audioController.playTone(freq, type, duration);
-    });
-
-    const playTransitionTone = useEffectEvent(() => {
-        audioController.playTransitionTone();
-    });
-
-    const playFinishTone = useEffectEvent(() => {
-        audioController.playFinishTone();
     });
 
     // Prep countdown using pure state transitions so it stays stable in React Strict mode.
@@ -86,7 +77,7 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
                 startTimeRef.current = Date.now();
                 setIsPrepping(false);
                 setIsRunning(true);
-                playTransitionTone();
+                playTone(1500, 'triangle', 0.12);
                 return;
             }
 
@@ -118,7 +109,7 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
 
                     if (!finishHandledRef.current) {
                         finishHandledRef.current = true;
-                        playFinishTone();
+                        playTone(1500, 'triangle', 0.15); // Finish sound
 
                         if (onFinish) {
                             finishTimeoutRef.current = window.setTimeout(() => {
@@ -183,7 +174,6 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible' && keepAwakeRef.current) {
-                audioController.resume();
                 requestScreenWakeLock(wakeLockRef, keepAwakeRef);
                 return;
             }
@@ -219,21 +209,6 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
             }
         }
     }, [remainingInStep, isRunning, isPrepping, currentStep]);
-
-    useEffect(() => {
-        if (!isRunning || isPrepping || isFinished || currentStepIndex === -1) {
-            return;
-        }
-
-        if (
-            previousStepIndexRef.current !== -1
-            && previousStepIndexRef.current !== currentStepIndex
-        ) {
-            playTransitionTone();
-        }
-
-        previousStepIndexRef.current = currentStepIndex;
-    }, [currentStepIndex, isFinished, isPrepping, isRunning]);
 
 
     const formatTime = (totalSeconds) => {
@@ -280,7 +255,7 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
 
             if (!finishHandledRef.current) {
                 finishHandledRef.current = true;
-                audioController.playFinishTone();
+                audioController.playTone(1500, 'triangle', 0.15);
 
                 if (onFinish) {
                     finishTimeoutRef.current = window.setTimeout(() => {
@@ -292,7 +267,7 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
     };
 
     const handlePrepInteraction = () => {
-        audioController.resume({ testSound: true });
+        audioController.resume();
         requestScreenWakeLock(wakeLockRef, keepAwakeRef);
     };
 

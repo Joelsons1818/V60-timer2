@@ -91,7 +91,7 @@ function App() {
 
   const handleStart = () => {
     setStorageError('');
-    audioController.resume({ testSound: true });
+    audioController.resume();
     setActiveRecipe(cloneRecipe(recipe));
     setScreen('timer');
   };
