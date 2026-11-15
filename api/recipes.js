@@ -1,4 +1,4 @@
-import { appendRecipe, deleteRecipe, listRecipes, updateRecipe } from './_lib/googleSheets.js';
+import { deleteRecipe, listRecipes, saveRecipe } from './_lib/googleSheets.js';
 import { errorResponse, json, readJsonBody, rejectIfCrossOrigin } from './_lib/http.js';
 import { getSessionFromRequest } from './_lib/session.js';
 
@@ -111,7 +111,7 @@ export default {
           return errorResponse(validationError, 400);
         }
 
-        return json(await appendRecipe(recipe), { status: 201 });
+        return json(await saveRecipe(recipe), { status: 201 });
       }
 
       if (request.method === 'PUT') {
@@ -123,7 +123,7 @@ export default {
           return errorResponse(validationError, 400);
         }
 
-        return json(await updateRecipe(recipe));
+        return json(await saveRecipe(recipe));
       }
 
       if (request.method === 'DELETE') {

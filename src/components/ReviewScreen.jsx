@@ -15,7 +15,6 @@ const formatRatio = (ratio) => {
 
 export function ReviewScreen({
   authError = '',
-  isLocalMode = false,
   onBackHome,
   onSave,
   onSignedIn,
@@ -23,7 +22,7 @@ export function ReviewScreen({
   storageError = '',
   user,
 }) {
-  const canSave = isLocalMode || Boolean(user);
+  const isSignedIn = Boolean(user);
   const [coffeeName, setCoffeeName] = useState(() => getLastCoffeeName());
   const [notes, setNotes] = useState('');
   const [rating, setRating] = useState(0);
@@ -136,18 +135,19 @@ export function ReviewScreen({
         tastingTags={tastingTags}
       />
 
-      {!canSave && (
+      {!isSignedIn && (
         <div className="auth-panel">
-          <h3 className="mini-title">Sign In To Save</h3>
+          <h3 className="mini-title">Sign In To Sync</h3>
           <p className="screen-copy">
-            Use your Google account to save this recipe to your private history.
+            You can save now and the recipe stays on this device. Sign in with
+            Google to also send it to your private history.
           </p>
           <GoogleSignInButton onSuccess={onSignedIn} />
         </div>
       )}
 
       <div className="action-buttons">
-        <button className="btn-primary" onClick={handleSave} disabled={!canSave}>
+        <button className="btn-primary" onClick={handleSave}>
           Save To History
         </button>
         <button className="btn-secondary" onClick={onBackHome}>

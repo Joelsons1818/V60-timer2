@@ -1512,3 +1512,31 @@ body {
     font-size: 6rem;
   }
 }
+
+.info-banner {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 163, 115, 0.35);
+  background: rgba(212, 163, 115, 0.1);
+  color: #e9d5bd;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.sync-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pending-chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 163, 115, 0.5);
+  color: #d4a373;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+}

@@ -6,13 +6,20 @@ import { AuthScreen } from './components/AuthScreen';
 import { ConfigScreen } from './components/ConfigScreen';
 import { HistoryScreen } from './components/HistoryScreen';
 import { ReviewScreen } from './components/ReviewScreen';
+import { SharedRecipeScreen } from './components/SharedRecipeScreen';
 import { TimerScreen } from './components/TimerScreen';
 import {
   disableGoogleAutoSelect,
   loadSession,
   logoutSession,
 } from './utils/auth';
-import { buildBrewLog, persistBrewLog } from './utils/storage';
+import {
+  buildBrewLog,
+  clearSyncedCache,
+  persistBrewLog,
+  syncPendingChanges,
+} from './utils/storage';
+import { clearSharedRecipeFromUrl, parseSharedRecipe } from './utils/share';
 import { saveLastCoffeeName } from './utils/preferences';
 import audioController from './utils/audioController';
 
@@ -46,16 +53,30 @@ function App() {
     recipe,
   } = useRecipe();
 
-  const [screen, setScreen] = useState('config');
+  const [sharedRecipe, setSharedRecipe] = useState(() => parseSharedRecipe());
+  const [screen, setScreen] = useState(sharedRecipe ? 'shared' : 'config');
   const [activeRecipe, setActiveRecipe] = useState(null);
   const [storageError, setStorageError] = useState('');
+  const [notice, setNotice] = useState('');
   const [authError, setAuthError] = useState('');
   const [authMode, setAuthMode] = useState('loading');
   const [nextScreenAfterAuth, setNextScreenAfterAuth] = useState('config');
   const [user, setUser] = useState(null);
 
-  const isLocalMode = authMode === 'local';
-  const canAccessPrivateHistory = isLocalMode || Boolean(user);
+  // Whenever a login becomes available, send anything still waiting on this device.
+  useEffect(() => {
+    if (user) {
+      syncPendingChanges();
+    }
+  }, [user]);
+
+  const describeSaveResult = (result) => {
+    if (result.synced) {
+      return 'Recipe saved to your history.';
+    }
+
+    return `Recipe saved on this device. ${result.message} It will sync automatically.`;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +112,7 @@ function App() {
 
   const handleStart = () => {
     setStorageError('');
+    setNotice('');
     audioController.resume();
     setActiveRecipe(cloneRecipe(recipe));
     setScreen('timer');
@@ -126,6 +148,7 @@ function App() {
     try {
       await logoutSession();
       disableGoogleAutoSelect();
+      clearSyncedCache();
       setUser(null);
       setAuthMode('remote');
       setAuthError('');
@@ -138,13 +161,30 @@ function App() {
     }
   };
 
+  // History always opens: without a login it shows what is stored on this
+  // device and offers the Google sign-in right there.
   const handleHistory = () => {
-    if (canAccessPrivateHistory) {
-      setScreen('history');
-      return;
-    }
+    setNotice('');
+    setScreen('history');
+  };
 
-    handleOpenAuth('history');
+  const closeSharedRecipe = () => {
+    clearSharedRecipeFromUrl();
+    setSharedRecipe(null);
+    setScreen('config');
+  };
+
+  const handleUseSharedRecipe = () => {
+    applyRecipeSettings(sharedRecipe);
+    closeSharedRecipe();
+  };
+
+  const handleSaveSharedRecipe = async () => {
+    const result = await persistBrewLog(sharedRecipe);
+
+    applyRecipeSettings(sharedRecipe);
+    setNotice(describeSaveResult(result));
+    closeSharedRecipe();
   };
 
   const handleUseHistoryRecipe = (historyRecipe) => {
@@ -161,7 +201,9 @@ function App() {
 
     try {
       setStorageError('');
-      await persistBrewLog(buildBrewLog(activeRecipe, details));
+      const result = await persistBrewLog(buildBrewLog(activeRecipe, details));
+
+      setNotice(describeSaveResult(result));
       saveLastCoffeeName(details.coffeeName);
       setActiveRecipe(null);
       setScreen('config');
@@ -176,6 +218,7 @@ function App() {
         <ConfigScreen
           authError={authError}
           authMode={authMode}
+          notice={notice}
           balance={balance}
           coffeeGrams={coffeeGrams}
           onHistory={handleHistory}
@@ -219,7 +262,6 @@ function App() {
       {screen === 'review' && activeRecipe && (
         <ReviewScreen
           authError={authError}
-          isLocalMode={isLocalMode}
           onBackHome={handleReset}
           onSave={handleSave}
           onSignedIn={handleSignedIn}
@@ -232,7 +274,18 @@ function App() {
       {screen === 'history' && (
         <HistoryScreen
           onBack={handleReset}
+          onSignedIn={handleSignedIn}
           onUseRecipe={handleUseHistoryRecipe}
+          user={user}
+        />
+      )}
+
+      {screen === 'shared' && sharedRecipe && (
+        <SharedRecipeScreen
+          onDismiss={closeSharedRecipe}
+          onSave={handleSaveSharedRecipe}
+          onUse={handleUseSharedRecipe}
+          recipe={sharedRecipe}
         />
       )}
 

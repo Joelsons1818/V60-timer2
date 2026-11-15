@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { calculateRecipe } from '../utils/calculator';
 import { TastingControls } from './TastingControls';
 import {
   getTastingTagLabel,
@@ -7,23 +6,25 @@ import {
   normalizeTastingTags,
 } from '../utils/tasting';
 import {
+  balanceLabels,
+  buildLogFromFields,
+  createDraft,
+  createDuplicateDraft,
+  createNewDraft,
+  formatRatio,
+  normalizeCoffeeGrams,
+  normalizeRatio,
+  parseNumber,
+  roundToOneDecimal,
+} from '../utils/brewLog';
+import { shareRecipe } from '../utils/share';
+import { GoogleSignInButton } from './GoogleSignInButton';
+import {
+  getBrewLogs,
   loadBrewLogs,
   persistBrewLog,
-  persistUpdatedBrewLog,
   removeBrewLog,
 } from '../utils/storage';
-
-const balanceLabels = {
-  acidity: 'Acidity',
-  balanced: 'Balanced',
-  sweet: 'Sweet',
-};
-
-const DEFAULT_RATIO = 15;
-const DEFAULT_GRIND_SIZE = 130;
-const DEFAULT_STRENGTH_POURS = 3;
-const MIN_RATIO = 10;
-const MAX_RATIO = 20;
 
 const formatDate = (isoDate) => {
   const date = new Date(isoDate);
@@ -34,158 +35,41 @@ const formatDate = (isoDate) => {
   })}`;
 };
 
-const createDraftId = () => {
-  return globalThis.crypto?.randomUUID?.() || `draft-${Date.now()}`;
-};
-
-const parseNumber = (value, fallback = 0) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
-
-const clamp = (value, min, max) => {
-  return Math.max(min, Math.min(max, value));
-};
-
-const roundToOneDecimal = (value) => {
-  return Math.round(value * 10) / 10;
-};
-
-const normalizeCoffeeGrams = (coffeeGrams, totalWater, ratio) => {
-  const parsedCoffee = parseNumber(coffeeGrams);
-
-  if (parsedCoffee > 0) {
-    return roundToOneDecimal(parsedCoffee);
-  }
-
-  const parsedWater = parseNumber(totalWater);
-  const normalizedRatio = normalizeRatio(ratio);
-
-  return parsedWater > 0 ? roundToOneDecimal(parsedWater / normalizedRatio) : 0;
-};
-
-const normalizeRatio = (value) => {
-  const parsed = parseNumber(value, DEFAULT_RATIO);
-
-  return Math.round(clamp(parsed, MIN_RATIO, MAX_RATIO) * 2) / 2;
-};
-
-const normalizeGrindSize = (value) => {
-  if (value === '' || value === null || value === undefined) {
-    return '';
-  }
-
-  return clamp(Math.round(parseNumber(value, 0)), 0, 200);
-};
-
-const formatRatio = (ratio) => {
-  const normalizedRatio = normalizeRatio(ratio);
-
-  return Number.isInteger(normalizedRatio)
-    ? String(normalizedRatio)
-    : normalizedRatio.toFixed(1);
-};
-
-const buildLogFromFields = (fields) => {
-  const normalizedWater = Math.max(1, Math.round(parseNumber(fields.totalWater, 300)));
-  const normalizedTemperature = Math.max(1, Math.round(parseNumber(fields.temperature, 92)));
-  const normalizedRatio = normalizeRatio(fields.ratio);
-  const normalizedCoffee = normalizeCoffeeGrams(
-    fields.coffeeGrams,
-    normalizedWater,
-    normalizedRatio,
-  );
-  const normalizedGrindSize = normalizeGrindSize(fields.grindSize);
-  const normalizedBalance = ['acidity', 'balanced', 'sweet'].includes(fields.balance)
-    ? fields.balance
-    : 'balanced';
-  const normalizedStrengthPours = Math.max(2, Math.min(5, Math.round(parseNumber(fields.strengthPoursCount, DEFAULT_STRENGTH_POURS))));
-  const recipe = calculateRecipe(
-    normalizedCoffee,
-    normalizedWater,
-    normalizedBalance,
-    normalizedStrengthPours,
-    normalizedRatio,
-  );
-
-  return {
-    id: fields.id || createDraftId(),
-    date: fields.date || new Date().toISOString(),
-    coffeeName: fields.coffeeName?.trim() || '',
-    notes: fields.notes?.trim() || '',
-    rating: normalizeRating(fields.rating),
-    tastingTags: normalizeTastingTags(fields.tastingTags),
-    coffeeGrams: recipe.coffeeGrams,
-    totalWater: recipe.totalWater,
-    temperature: normalizedTemperature,
-    grindSize: normalizedGrindSize,
-    balance: recipe.balance,
-    strengthPoursCount: recipe.strengthPoursCount,
-    totalTime: recipe.totalTime,
-    ratio: recipe.ratio,
-    steps: [],
-  };
-};
-
-const createNewDraft = () => {
-  return {
-    ...buildLogFromFields({
-      grindSize: DEFAULT_GRIND_SIZE,
-      strengthPoursCount: DEFAULT_STRENGTH_POURS,
-    }),
-    isNew: true,
-    isDuplicate: false,
-  };
-};
-
-const createDraft = (log) => {
-  return {
-    ...buildLogFromFields(log),
-    isNew: false,
-    isDuplicate: false,
-  };
-};
-
-const createDuplicateDraft = (log) => {
-  const coffeeName = log.coffeeName?.trim();
-
-  return {
-    ...buildLogFromFields({
-      ...log,
-      id: '',
-      date: new Date().toISOString(),
-      coffeeName: coffeeName ? `${coffeeName} Copy` : 'Untitled Coffee Copy',
-      notes: '',
-      rating: 0,
-      tastingTags: [],
-    }),
-    isNew: true,
-    isDuplicate: true,
-  };
-};
-
-export function HistoryScreen({ onBack, onUseRecipe }) {
-  const [logs, setLogs] = useState([]);
+export function HistoryScreen({ onBack, onSignedIn, onUseRecipe, user }) {
+  // Show what is already on this device immediately, then refresh from the cloud.
+  const [logs, setLogs] = useState(() => getBrewLogs());
   const [draft, setDraft] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [syncStatus, setSyncStatus] = useState({ synced: true, needsLogin: false, message: '' });
+  const [shareNotice, setShareNotice] = useState('');
   const [busyLogId, setBusyLogId] = useState('');
 
   const refreshLogs = async () => {
-    try {
-      setIsLoading(true);
-      setErrorMessage('');
-      setLogs(await loadBrewLogs());
-    } catch (error) {
-      setErrorMessage(error.message || 'Unable to load recipes.');
-    } finally {
-      setIsLoading(false);
-    }
+    setIsLoading(true);
+
+    const result = await loadBrewLogs();
+
+    setLogs(result.logs);
+    setSyncStatus(result);
+    setIsLoading(false);
   };
 
   useEffect(() => {
     refreshLogs();
-  }, []);
+  }, [user]);
+
+  const handleShare = async (log) => {
+    const outcome = await shareRecipe(log);
+
+    if (outcome === 'copied') {
+      setShareNotice('Recipe link copied. Paste it anywhere to share.');
+    } else if (outcome === 'failed') {
+      setShareNotice('Could not share automatically. Try again from another browser.');
+    } else {
+      setShareNotice('');
+    }
+  };
 
   const handleFieldChange = (field, value) => {
     setDraft((currentDraft) => ({
@@ -285,13 +169,7 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
 
     try {
       setErrorMessage('');
-
-      if (draft.isNew) {
-        await persistBrewLog(normalizedLog);
-      } else {
-        await persistUpdatedBrewLog(normalizedLog);
-      }
-
+      await persistBrewLog(normalizedLog);
       setDraft(null);
       await refreshLogs();
     } catch (error) {
@@ -344,6 +222,24 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
       </div>
 
       {errorMessage && <p className="error-banner">{errorMessage}</p>}
+      {shareNotice && <p className="info-banner">{shareNotice}</p>}
+
+      {!isLoading && !syncStatus.synced && (
+        <div className="sync-panel">
+          <p className="info-banner">
+            Showing the recipes stored on this device. {syncStatus.message} Anything
+            you save stays here and syncs automatically later.
+          </p>
+          {syncStatus.needsLogin && onSignedIn && (
+            <GoogleSignInButton onSuccess={onSignedIn} />
+          )}
+          {!syncStatus.needsLogin && (
+            <button className="btn-secondary btn-inline" onClick={refreshLogs}>
+              Try Again
+            </button>
+          )}
+        </div>
+      )}
 
       {draft && (
         <div className="history-editor-card">
@@ -512,7 +408,7 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
         </div>
       )}
 
-      {isLoading ? (
+      {isLoading && logs.length === 0 ? (
         <div className="empty-state">
           <h3>Loading recipes...</h3>
           <p>Checking your saved brews.</p>
@@ -540,6 +436,11 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
                       <strong>{log.coffeeName || 'Untitled Coffee'}</strong>
                       <div className="history-entry-meta">
                         <span className="section-note">{formatDate(log.date)}</span>
+                        {log.pending && (
+                          <span className="pending-chip" title="Saved on this device, waiting to sync">
+                            Not synced
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -561,6 +462,12 @@ export function HistoryScreen({ onBack, onUseRecipe }) {
                         onClick={() => handleDuplicate(log)}
                       >
                         Duplicate
+                      </button>
+                      <button
+                        className="btn-secondary btn-inline history-action-btn history-action-btn-modern"
+                        onClick={() => handleShare(log)}
+                      >
+                        Share
                       </button>
                       <button
                         className="btn-secondary btn-inline history-action-btn history-action-btn-modern history-delete-btn"

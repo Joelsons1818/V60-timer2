@@ -9,6 +9,7 @@ const getNumericInputValue = (value) => {
 export function ConfigScreen({
   authError,
   authMode,
+  notice = '',
   coffeeGrams,
   grindSize,
   ratio,
@@ -68,6 +69,7 @@ export function ConfigScreen({
       </div>
 
       {authError && <p className="error-banner">{authError}</p>}
+      {notice && <p className="info-banner">{notice}</p>}
 
       <header className="header">
         <h1>4:6 Method</h1>

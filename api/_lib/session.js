@@ -1,7 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 const SESSION_COOKIE_NAME = 'v60_session';
-const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
+const SESSION_MAX_AGE = 60 * 60 * 24 * 180;
+const SESSION_RENEW_AFTER = 60 * 60 * 24;
 
 const encodeBase64Url = (value) => {
   return Buffer.from(value, 'utf8').toString('base64url');
@@ -107,6 +108,13 @@ export const createSessionCookie = (user, request) => {
   const signature = signValue(payload);
 
   return serializeCookie(`${payload}.${signature}`, request, SESSION_MAX_AGE);
+};
+
+// Sliding session: while the app keeps being used, the login never expires.
+export const shouldRenewSession = (session) => {
+  const now = Math.floor(Date.now() / 1000);
+
+  return Boolean(session?.iat) && now - session.iat > SESSION_RENEW_AFTER;
 };
 
 export const clearSessionCookie = (request) => {

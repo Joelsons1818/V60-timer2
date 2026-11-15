@@ -151,31 +151,64 @@ const getAccessToken = async () => {
   return accessTokenCache.token;
 };
 
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+
+const wait = (milliseconds) => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+};
+
 const sheetRequest = async (path, init = {}) => {
   const { spreadsheetId } = getSheetsConfig();
-  const accessToken = await getAccessToken();
-  const response = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}${path}`,
-    {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        ...init.headers,
-      },
-    },
-  );
+  let lastError;
 
-  if (!response.ok) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt > 0) {
+      await wait(400 * attempt);
+    }
+
+    let response;
+
+    try {
+      const accessToken = await getAccessToken();
+
+      response = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}${path}`,
+        {
+          ...init,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            ...init.headers,
+          },
+        },
+      );
+    } catch (error) {
+      // Network hiccup or token failure: try again before giving up.
+      lastError = error;
+      continue;
+    }
+
+    if (response.ok) {
+      return response;
+    }
+
     const payload = await response.json().catch(() => null);
-    const message =
-      payload?.error?.message ||
-      'Google Sheets request failed.';
 
-    throw new Error(message);
+    lastError = new Error(payload?.error?.message || 'Google Sheets request failed.');
+
+    if (response.status === 401) {
+      accessTokenCache = { expiresAt: 0, token: '' };
+      continue;
+    }
+
+    if (!RETRYABLE_STATUS.has(response.status)) {
+      break;
+    }
   }
 
-  return response;
+  throw lastError;
 };
 
 const getSheetMetadata = async () => {
@@ -399,10 +432,14 @@ const getRecipeRows = async () => {
   const rows = await getSheetValues(`A2:${getLastColumnLetter()}`);
 
   return rows
-    .filter((row) => row[0])
     .map((row, index) => ({
       rowNumber: index + 2,
-      recipe: toRecipe(row),
+      row,
+    }))
+    .filter((entry) => entry.row[0])
+    .map((entry) => ({
+      rowNumber: entry.rowNumber,
+      recipe: toRecipe(entry.row),
     }));
 };
 
@@ -416,43 +453,49 @@ export const listRecipes = async () => {
     });
 };
 
-export const appendRecipe = async (recipe) => {
-  await ensureSheetReady();
-  await appendSheetValues(`A2:${getLastColumnLetter()}`, [serializeRecipe(recipe)]);
-
-  return recipe;
-};
-
-export const updateRecipe = async (recipe) => {
+// Saves are idempotent: the same recipe id sent twice (for example when the
+// app retries after a dropped connection) updates the row instead of duplicating it.
+export const saveRecipe = async (recipe) => {
   const rows = await getRecipeRows();
   const match = rows.find((entry) => entry.recipe.id === String(recipe.id));
 
-  if (!match) {
-    throw new Error('Recipe not found in Google Sheets.');
+  if (match) {
+    await updateSheetValues(
+      `A${match.rowNumber}:${getLastColumnLetter()}${match.rowNumber}`,
+      [serializeRecipe(recipe)],
+    );
+  } else {
+    await appendSheetValues(`A2:${getLastColumnLetter()}`, [serializeRecipe(recipe)]);
   }
-
-  await updateSheetValues(
-    `A${match.rowNumber}:${getLastColumnLetter()}${match.rowNumber}`,
-    [serializeRecipe(recipe)],
-  );
 
   return recipe;
 };
 
 export const deleteRecipe = async (recipeId) => {
   const { sheetName } = getSheetsConfig();
+  const rows = await getRecipeRows();
+  const match = rows.find((entry) => entry.recipe.id === String(recipeId));
+
+  // Already gone: treat as success so a retried delete never errors.
+  if (!match) {
+    return { id: String(recipeId) };
+  }
+
   const metadata = await getSheetMetadata();
   const sheet = (metadata.sheets || []).find(
     (entry) => entry.properties?.title === sheetName,
   );
-  const rows = await getRecipeRows();
-  const match = rows.find((entry) => entry.recipe.id === String(recipeId));
   const sheetId = sheet?.properties?.sheetId;
 
-  if (sheetId === undefined || sheetId === null || !match) {
-    throw new Error('Recipe not found in Google Sheets.');
+  if (sheetId === undefined || sheetId === null) {
+    throw new Error('Recipes sheet was not found in Google Sheets.');
   }
 
   await deleteSheetRow(sheetId, match.rowNumber);
   return { id: String(recipeId) };
+};
+
+export const checkSheetsAccess = async () => {
+  getSheetsConfig();
+  await getSheetMetadata();
 };

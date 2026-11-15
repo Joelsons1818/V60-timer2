@@ -58,6 +58,10 @@ const getCacheExpiry = (response) => {
   return Date.now() + (maxAge * 1000);
 };
 
+export const isEmailAllowed = (email) => {
+  return getAllowedEmails().has(String(email || '').toLowerCase());
+};
+
 const fetchGoogleKeys = async (forceRefresh = false) => {
   if (!forceRefresh && certificateCache.expiresAt > Date.now() && certificateCache.keys.size > 0) {
     return certificateCache.keys;
