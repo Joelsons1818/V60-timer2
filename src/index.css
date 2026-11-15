@@ -1066,10 +1066,11 @@ body {
   color: var(--color-accent);
 }
 
-/* Full-screen flash on each step change, for when the beeps are muted.
-   Deliberately not position: fixed. iOS colours the status bar area from fixed
-   elements at the top of the page, which left a sand-coloured strip. The flash
-   sits inside the timer and reaches the screen edges through a huge box-shadow. */
+/* Flash on each step change, for when the beeps are muted.
+   iOS paints the status bar with whatever colour the page shows at its top
+   edge and keeps it afterwards, so the flash must never reach the top of the
+   screen: it starts below the "Total" line and the clip-path cuts the
+   box-shadow there, while still letting it reach the sides and the bottom. */
 .timer-container {
   position: relative;
 }
@@ -1081,6 +1082,7 @@ body {
   z-index: 50;
   pointer-events: none;
   background-color: transparent;
+  clip-path: inset(40px -100vmax -100vmax -100vmax);
   animation: step-flash 0.9s ease-out;
 }
 
