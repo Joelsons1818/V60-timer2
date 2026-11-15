@@ -32,6 +32,7 @@ export default {
         checks.sheetsReachable = true;
       } catch (error) {
         sheetsError = error.message || 'Unknown Google Sheets error.';
+        console.error('Health check: Google Sheets unreachable:', sheetsError);
       }
     }
 
