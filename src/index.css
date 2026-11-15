@@ -1066,29 +1066,32 @@ body {
   color: var(--color-accent);
 }
 
-/* Full-screen flash on each step change, for when the beeps are muted. */
+/* Full-screen flash on each step change, for when the beeps are muted.
+   The overlay has no colour of its own outside the animation: iOS tints the
+   status bar with the background of fixed elements at the top of the page,
+   even invisible ones, which showed up as a coloured strip. */
 .step-flash {
+  --flash-color: rgba(212, 163, 115, 0.9);
   position: fixed;
   inset: 0;
   z-index: 50;
   pointer-events: none;
-  background: var(--color-accent);
-  opacity: 0;
+  background-color: transparent;
   animation: step-flash 0.9s ease-out;
 }
 
 .step-flash.finished {
-  background: var(--color-success);
+  --flash-color: rgba(6, 214, 160, 0.9);
   animation: step-flash 0.9s ease-out 2;
 }
 
 @keyframes step-flash {
   0% {
-    opacity: 0.9;
+    background-color: var(--flash-color);
   }
 
   100% {
-    opacity: 0;
+    background-color: transparent;
   }
 }
 
