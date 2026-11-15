@@ -1,48 +1,6 @@
 import React, { useEffect, useEffectEvent, useRef, useState } from 'react';
 import audioController from '../utils/audioController';
-
-const requestScreenWakeLock = async (wakeLockRef, keepAwakeRef) => {
-    if (!('wakeLock' in navigator) || document.visibilityState !== 'visible') {
-        return;
-    }
-
-    try {
-        if (wakeLockRef.current) {
-            return;
-        }
-
-        const wakeLock = await navigator.wakeLock.request('screen');
-        wakeLockRef.current = wakeLock;
-
-        wakeLock.addEventListener('release', () => {
-            if (wakeLockRef.current === wakeLock) {
-                wakeLockRef.current = null;
-            }
-
-            if (keepAwakeRef.current && document.visibilityState === 'visible') {
-                window.setTimeout(() => {
-                    requestScreenWakeLock(wakeLockRef, keepAwakeRef);
-                }, 120);
-            }
-        }, { once: true });
-    } catch (error) {
-        console.debug('Wake lock unavailable', error);
-    }
-};
-
-const releaseScreenWakeLock = async (wakeLockRef) => {
-    if (!wakeLockRef.current) {
-        return;
-    }
-
-    try {
-        await wakeLockRef.current.release();
-    } catch (error) {
-        console.debug('Wake lock release skipped', error);
-    } finally {
-        wakeLockRef.current = null;
-    }
-};
+import screenKeeper from '../utils/keepAwake';
 
 export function TimerScreen({ recipe, onReset, onFinish }) {
     const [elapsedTime, setElapsedTime] = useState(0);
@@ -57,8 +15,6 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
     const startTimeRef = useRef(null); // Reference for precise timing
     const finishHandledRef = useRef(false);
     const finishTimeoutRef = useRef(null);
-    const wakeLockRef = useRef(null);
-    const keepAwakeRef = useRef(false);
 
     // Sound Function using Persistent Context
     const playTone = useEffectEvent((freq = 800, type = 'sine', duration = 0.1) => {
@@ -152,42 +108,19 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
         ? String(recipe.ratio)
         : recipe.ratio.toFixed(1);
 
+    // Keep the screen on for the whole brew (prep countdown + running timer).
     useEffect(() => {
-        keepAwakeRef.current = shouldKeepAwake;
-
-        if (!shouldKeepAwake) {
-            releaseScreenWakeLock(wakeLockRef);
-            return undefined;
+        if (shouldKeepAwake) {
+            screenKeeper.enable();
+        } else {
+            screenKeeper.disable();
         }
-
-        requestScreenWakeLock(wakeLockRef, keepAwakeRef);
-
-        return undefined;
     }, [shouldKeepAwake]);
 
     useEffect(() => {
-        if (isFinished) {
-            releaseScreenWakeLock(wakeLockRef);
-        }
-    }, [isFinished]);
-
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && keepAwakeRef.current) {
-                requestScreenWakeLock(wakeLockRef, keepAwakeRef);
-                return;
-            }
-
-            if (document.visibilityState !== 'visible') {
-                wakeLockRef.current = null;
-            }
-        };
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
         return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            releaseScreenWakeLock(wakeLockRef);
+            screenKeeper.disable();
+            audioController.stopKeepAlive();
         };
     }, []);
 
@@ -225,12 +158,12 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
         const nextIsRunning = !isRunning;
         setIsRunning(nextIsRunning);
 
+        // Called from the tap itself so the keep-awake fallback is allowed to start.
         if (nextIsRunning) {
-            requestScreenWakeLock(wakeLockRef, keepAwakeRef);
-            return;
+            screenKeeper.enable();
+        } else {
+            screenKeeper.disable();
         }
-
-        releaseScreenWakeLock(wakeLockRef);
     };
 
     const handleSkipStep = () => {
@@ -268,7 +201,7 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
 
     const handlePrepInteraction = () => {
         audioController.resume();
-        requestScreenWakeLock(wakeLockRef, keepAwakeRef);
+        screenKeeper.enable();
     };
 
     useEffect(() => {

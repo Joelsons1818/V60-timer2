@@ -22,6 +22,7 @@ import {
 import { clearSharedRecipeFromUrl, parseSharedRecipe } from './utils/share';
 import { saveLastCoffeeName } from './utils/preferences';
 import audioController from './utils/audioController';
+import screenKeeper from './utils/keepAwake';
 
 const cloneRecipe = (recipe) => {
   return {
@@ -113,7 +114,9 @@ function App() {
   const handleStart = () => {
     setStorageError('');
     setNotice('');
+    // Both need to start from this tap to be allowed by the phone.
     audioController.resume();
+    screenKeeper.enable();
     setActiveRecipe(cloneRecipe(recipe));
     setScreen('timer');
   };
