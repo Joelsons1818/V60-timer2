@@ -1,44 +1,26 @@
 // Timer beeps.
 //
-// Phones only allow sound after a tap, and iPhones additionally mute Web Audio
-// when the side switch is on silent. To make the beeps dependable:
-//  - resume() is called from taps to unlock the audio engine;
-//  - the audio session is switched to "playback" and a silent looping <audio>
-//    element runs during the brew, which makes iOS treat the app like a media
-//    player (sound plays even with the silent switch on);
-//  - every beep first makes sure the engine is actually running.
+// The beeps are deliberately "polite": the audio session is set to ambient, so
+// they mix with a podcast or music playing in another app instead of pausing
+// it. The trade-off is that an iPhone on silent mode will not play them.
+// resume() is called from taps to unlock the audio engine, and every beep
+// first makes sure the engine is actually running.
 
-const buildSilentWavUrl = () => {
-  const sampleRate = 8000;
-  const samples = sampleRate / 2;
-  const bytes = new Uint8Array(44 + samples);
-  const view = new DataView(bytes.buffer);
-  const writeText = (offset, text) => {
-    [...text].forEach((char, index) => view.setUint8(offset + index, char.charCodeAt(0)));
-  };
-
-  writeText(0, 'RIFF');
-  view.setUint32(4, 36 + samples, true);
-  writeText(8, 'WAVEfmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true); // PCM
-  view.setUint16(22, 1, true); // mono
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate, true);
-  view.setUint16(32, 1, true);
-  view.setUint16(34, 8, true); // 8-bit
-  writeText(36, 'data');
-  view.setUint32(40, samples, true);
-  bytes.fill(128, 44); // 8-bit silence
-
-  return URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' }));
+// Ambient audio never interrupts what other apps are playing.
+export const setAmbientAudioSession = () => {
+  try {
+    if (navigator.audioSession) {
+      navigator.audioSession.type = 'ambient';
+    }
+  } catch (error) {
+    console.debug('Audio session type unavailable', error);
+  }
 };
 
 class AudioController {
   constructor() {
     this.context = null;
     this.isUnlocked = false;
-    this.keepAlive = null;
 
     if (typeof document !== 'undefined') {
       // Any tap re-awakens the audio engine if the system suspended it.
@@ -80,35 +62,6 @@ class AudioController {
     });
   }
 
-  startKeepAlive() {
-    try {
-      if (navigator.audioSession) {
-        navigator.audioSession.type = 'playback';
-      }
-    } catch (error) {
-      console.debug('Audio session type unavailable', error);
-    }
-
-    try {
-      if (!this.keepAlive) {
-        this.keepAlive = new Audio(buildSilentWavUrl());
-        this.keepAlive.loop = true;
-        this.keepAlive.setAttribute('playsinline', '');
-      }
-
-      this.keepAlive.play()?.catch?.(() => {
-        // Not started from a tap: the next tap will start it.
-      });
-    } catch (error) {
-      console.debug('Silent audio loop unavailable', error);
-    }
-  }
-
-  // Call when the brew screen closes.
-  stopKeepAlive() {
-    this.keepAlive?.pause();
-  }
-
   // Must be called from a tap/click handler.
   resume() {
     try {
@@ -117,7 +70,7 @@ class AudioController {
         return;
       }
 
-      this.startKeepAlive();
+      setAmbientAudioSession();
       this.wakeContext();
 
       if (!this.isUnlocked) {

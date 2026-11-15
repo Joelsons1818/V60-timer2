@@ -120,7 +120,6 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
     useEffect(() => {
         return () => {
             screenKeeper.disable();
-            audioController.stopKeepAlive();
         };
     }, []);
 

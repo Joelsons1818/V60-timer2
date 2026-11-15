@@ -1,3 +1,4 @@
+import { setAmbientAudioSession } from './audioController';
 import { KEEP_AWAKE_VIDEO } from './keepAwakeVideo';
 
 // Keeps the phone screen on while a brew is running.
@@ -48,6 +49,10 @@ class ScreenKeeper {
 
   playVideo() {
     try {
+      // The clip has a (silent) audio track; ambient mode stops it from
+      // pausing a podcast or music playing in another app.
+      setAmbientAudioSession();
+
       const result = this.getVideo().play();
 
       result?.catch?.(() => {
