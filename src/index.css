@@ -1067,12 +1067,16 @@ body {
 }
 
 /* Full-screen flash on each step change, for when the beeps are muted.
-   The overlay has no colour of its own outside the animation: iOS tints the
-   status bar with the background of fixed elements at the top of the page,
-   even invisible ones, which showed up as a coloured strip. */
+   Deliberately not position: fixed. iOS colours the status bar area from fixed
+   elements at the top of the page, which left a sand-coloured strip. The flash
+   sits inside the timer and reaches the screen edges through a huge box-shadow. */
+.timer-container {
+  position: relative;
+}
+
 .step-flash {
   --flash-color: rgba(212, 163, 115, 0.9);
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 50;
   pointer-events: none;
@@ -1088,10 +1092,12 @@ body {
 @keyframes step-flash {
   0% {
     background-color: var(--flash-color);
+    box-shadow: 0 0 0 100vmax var(--flash-color);
   }
 
   100% {
     background-color: transparent;
+    box-shadow: 0 0 0 100vmax transparent;
   }
 }
 
