@@ -2,6 +2,15 @@ import React, { useEffect, useEffectEvent, useRef, useState } from 'react';
 import audioController from '../utils/audioController';
 import screenKeeper from '../utils/keepAwake';
 
+// Vibration only exists on Android browsers; iOS ignores it.
+function vibrate(pattern) {
+    try {
+        navigator.vibrate?.(pattern);
+    } catch {
+        // Not supported or blocked: the on-screen flash still signals the change.
+    }
+}
+
 export function TimerScreen({ recipe, onReset, onFinish }) {
     const [elapsedTime, setElapsedTime] = useState(0);
     const [isRunning, setIsRunning] = useState(false);
@@ -132,6 +141,7 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
             // If we entered a new second that hasn't played yet
             if (isAlertZone && lastPlayedRef.current !== remainingInStep) {
                 playTone(remainingInStep === 1 ? 1200 : 800, 'sine', 0.1);
+                vibrate(40);
                 lastPlayedRef.current = remainingInStep;
             }
 
@@ -142,6 +152,19 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
         }
     }, [remainingInStep, isRunning, isPrepping, currentStep]);
 
+    // Silent cue for every new step and for the end of the brew, so the change is
+    // noticed even when the phone is muted. The flash itself is the keyed overlay below.
+    useEffect(() => {
+        if (isPrepping) {
+            return;
+        }
+
+        if (isFinished) {
+            vibrate([200, 100, 200, 100, 400]);
+        } else if (currentStepIndex !== -1) {
+            vibrate(250);
+        }
+    }, [currentStepIndex, isFinished, isPrepping]);
 
     const formatTime = (totalSeconds) => {
         const minutes = Math.floor(totalSeconds / 60);
@@ -225,6 +248,13 @@ export function TimerScreen({ recipe, onReset, onFinish }) {
 
     return (
         <div className="timer-container center-content">
+            {/* Remounts (and so replays its animation) on every step change and at the end. */}
+            <div
+                key={isFinished ? 'finished' : currentStepIndex}
+                className={`step-flash ${isFinished ? 'finished' : ''}`}
+                aria-hidden="true"
+            ></div>
+
             <span className="total-time-small timer-total-inline">
                 Total: {formatTime(elapsedTime)} / {formatTime(recipe.totalTime)}
             </span>
